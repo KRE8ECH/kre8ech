@@ -12,9 +12,12 @@ import {
   Lock,
   Building,
   GraduationCap,
-  MapPin
+  MapPin,
+  Phone,
+  MessageSquare
 } from "lucide-react";
 import { registerStudent, setStudentSession } from "@/lib/storage";
+import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 
 const interestOptions = [
   "Artificial Intelligence & LLMs",
@@ -31,7 +34,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    password: "",
+    phoneNumber: "",
     schoolCollege: "",
     classYear: "Class 9",
     city: "",
@@ -59,8 +62,8 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
 
-    if (!formData.fullName || !formData.email || !formData.schoolCollege || !formData.city) {
-      setError("Please fill out all required fields.");
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.phoneNumber.trim() || !formData.schoolCollege.trim() || !formData.city.trim()) {
+      setError("Please fill out all required fields including your Contact / WhatsApp Number.");
       return;
     }
 
@@ -73,34 +76,45 @@ export default function RegisterPage() {
 
     try {
       const newStudent = registerStudent({
-        fullName: formData.fullName,
-        email: formData.email,
-        schoolCollege: formData.schoolCollege,
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
+        schoolCollege: formData.schoolCollege.trim(),
         classYear: formData.classYear,
-        city: formData.city,
+        city: formData.city.trim(),
         techInterests: formData.techInterests,
         registeredProgram: formData.registeredProgram
       });
 
       setStudentSession({
-        fullName: formData.fullName,
-        email: formData.email,
-        schoolCollege: formData.schoolCollege,
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        schoolCollege: formData.schoolCollege.trim(),
         classYear: formData.classYear,
-        city: formData.city,
+        city: formData.city.trim(),
         techInterests: formData.techInterests,
         registeredProgram: formData.registeredProgram
       });
 
       setIsSuccess(true);
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1500);
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
       setIsSubmitting(false);
     }
   };
+
+  const whatsappMessage = encodeURIComponent(
+    `Hello KRE8ECH Team! I just registered for KRE8ECH:\n\n` +
+    `👤 Name: ${formData.fullName}\n` +
+    `📞 Phone: ${formData.phoneNumber}\n` +
+    `✉️ Email: ${formData.email}\n` +
+    `🏫 School/College: ${formData.schoolCollege}\n` +
+    `🎓 Class/Year: ${formData.classYear}\n` +
+    `📍 City: ${formData.city}\n` +
+    `🚀 Program: ${formData.registeredProgram}\n` +
+    `💡 Interests: ${formData.techInterests.join(", ")}\n\n` +
+    `Looking forward to joining the cohort!`
+  );
 
   return (
     <div className="py-14 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -122,14 +136,72 @@ export default function RegisterPage() {
         </div>
 
         {isSuccess ? (
-          <div className="text-center py-12 space-y-4 animate-in zoom-in duration-300">
+          <div className="text-center py-8 space-y-6 animate-in zoom-in duration-300">
             <div className="w-16 h-16 mx-auto rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-[#202124]">Registration Confirmed!</h2>
-            <p className="text-sm text-gray-600">
-              Welcome, <strong>{formData.fullName}</strong>. Redirecting you to your student dashboard...
-            </p>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#202124]">
+                Registration Confirmed!
+              </h2>
+              <p className="text-sm text-gray-600 max-w-md mx-auto">
+                Welcome, <strong>{formData.fullName}</strong>. Your application has been logged into our records database.
+              </p>
+            </div>
+
+            {/* Registration Summary Card */}
+            <div className="max-w-md mx-auto text-left p-5 rounded-2xl bg-gray-50 border border-gray-200 text-xs space-y-2">
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500 font-semibold">Student Name:</span>
+                <span className="font-bold text-[#202124]">{formData.fullName}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500 font-semibold">WhatsApp / Phone:</span>
+                <span className="font-bold text-[#202124]">{formData.phoneNumber}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500 font-semibold">Email:</span>
+                <span className="font-bold text-[#202124]">{formData.email}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500 font-semibold">School / City:</span>
+                <span className="font-bold text-[#202124]">{formData.schoolCollege}, {formData.city}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-gray-500 font-semibold">Program:</span>
+                <span className="font-bold text-[#202124]">{formData.registeredProgram}</span>
+              </div>
+            </div>
+
+            {/* WhatsApp notification CTA */}
+            <div className="max-w-md mx-auto pt-2 space-y-3">
+              <a
+                href={`https://wa.me/919875721958?text=${whatsappMessage}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-sm shadow-md hover:shadow-lg transition-all"
+              >
+                <WhatsAppIcon className="w-5 h-5" />
+                <span>Confirm on WhatsApp (+91 98757 21958)</span>
+              </a>
+
+              <div className="flex items-center justify-center gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard")}
+                  className="px-6 py-2.5 rounded-full bg-[#202124] text-white text-xs font-bold hover:bg-black transition-colors"
+                >
+                  Go to Student Dashboard
+                </button>
+                <Link
+                  href="/"
+                  className="text-xs font-bold text-gray-600 hover:text-black underline"
+                >
+                  Return to Home
+                </Link>
+              </div>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -160,6 +232,26 @@ export default function RegisterPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
+                  WhatsApp / Contact Number *
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. +91 98765 43210"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] shadow-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Email & School Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   Email Address *
                 </label>
                 <div className="relative">
@@ -174,11 +266,8 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* School & Class Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="sm:col-span-2">
+              <div>
                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   School / College Name *
                 </label>
@@ -194,7 +283,10 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
+            </div>
 
+            {/* School & Class Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   Class / Year *
@@ -212,10 +304,7 @@ export default function RegisterPage() {
                   <option value="Other">Other</option>
                 </select>
               </div>
-            </div>
 
-            {/* City & Program Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   City *

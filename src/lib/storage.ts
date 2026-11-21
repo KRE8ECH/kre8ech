@@ -28,6 +28,7 @@ const KEYS = {
   ANNOUNCEMENTS: "kre8ech_announcements",
   ADMIN_AUTH: "kre8ech_admin_auth",
   STUDENT_USER: "kre8ech_student_user",
+  WEBHOOK: "kre8ech_webhook_url",
 };
 
 // Safe storage access
@@ -154,40 +155,61 @@ export const getStudentRegistrations = (): StudentRegistration[] => {
       id: "reg-1",
       fullName: "Aarav Sharma",
       email: "aarav.sharma@example.com",
+      phoneNumber: "+91 98765 43210",
       schoolCollege: "Delhi Public School, R.K. Puram",
       classYear: "Class 10",
       city: "New Delhi",
       techInterests: ["AI & Machine Learning", "Web Development"],
       registeredProgram: "Four-Week Builder Program Cohort 1",
       status: "Confirmed",
-      registeredAt: "2026-11-18"
+      registeredAt: "2026-11-18",
+      notes: "Selected Track D: AI Automation"
     },
     {
       id: "reg-2",
       fullName: "Ananya Iyer",
       email: "ananya.iyer@example.com",
+      phoneNumber: "+91 98112 34567",
       schoolCollege: "The Mother's International School",
       classYear: "Class 11",
       city: "New Delhi",
       techInterests: ["Smart IoT & Robotics", "UI/UX Prototyping"],
       registeredProgram: "Four-Week Builder Program Cohort 1",
       status: "Confirmed",
-      registeredAt: "2026-11-19"
+      registeredAt: "2026-11-19",
+      notes: "Wants to lead hardware prototyping"
     },
     {
       id: "reg-3",
       fullName: "Rohan Patel",
       email: "rohan.patel@example.com",
+      phoneNumber: "+91 99001 23456",
       schoolCollege: "National Public School",
       classYear: "Class 9",
       city: "Bengaluru",
       techInterests: ["Web Development", "Game Dev & Creative Code"],
       registeredProgram: "Four-Week Builder Program Cohort 1",
       status: "Shortlisted",
-      registeredAt: "2026-11-20"
+      registeredAt: "2026-11-20",
+      notes: "Parent inquired about weekend timings"
     }
   ];
   return getLocalData<StudentRegistration[]>(KEYS.REGISTRATIONS, initialRegistrations);
+};
+
+export const saveStudentRegistrations = (registrations: StudentRegistration[]): void => {
+  setLocalData(KEYS.REGISTRATIONS, registrations);
+};
+
+export const updateStudentRegistration = (updated: StudentRegistration): void => {
+  const current = getStudentRegistrations();
+  const next = current.map((r) => (r.id === updated.id ? updated : r));
+  saveStudentRegistrations(next);
+};
+
+export const deleteStudentRegistration = (id: string): void => {
+  const current = getStudentRegistrations();
+  saveStudentRegistrations(current.filter((r) => r.id !== id));
 };
 
 export const registerStudent = (student: Omit<StudentRegistration, "id" | "registeredAt" | "status">): StudentRegistration => {
@@ -199,7 +221,32 @@ export const registerStudent = (student: Omit<StudentRegistration, "id" | "regis
     status: "Confirmed"
   };
   setLocalData(KEYS.REGISTRATIONS, [newRecord, ...current]);
+
+  // Optional: trigger webhook in background if configured
+  const webhookUrl = getWebhookUrl();
+  if (webhookUrl && typeof window !== "undefined") {
+    try {
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newRecord),
+        mode: "no-cors"
+      }).catch((e) => console.log("Webhook ping sent:", e));
+    } catch (e) {
+      // ignore
+    }
+  }
+
   return newRecord;
+};
+
+// Webhook config
+export const getWebhookUrl = (): string => {
+  return getLocalData<string>(KEYS.WEBHOOK, "");
+};
+
+export const saveWebhookUrl = (url: string): void => {
+  setLocalData(KEYS.WEBHOOK, url);
 };
 
 // Announcements
@@ -247,25 +294,45 @@ export const setAdminAuthenticated = (isAuth: boolean): void => {
 
 // Export CSV
 export const exportRegistrationsToCSV = (registrations: StudentRegistration[]): void => {
-  const headers = ["ID", "Full Name", "Email", "School/College", "Class/Year", "City", "Interests", "Program", "Status", "Date"];
+  const headers = [
+    "ID",
+    "Full Name",
+    "Email",
+    "Phone Number",
+    "School/College",
+    "Class/Year",
+    "City",
+    "Interests",
+    "Program",
+    "Status",
+    "Date",
+    "Notes"
+  ];
   const rows = registrations.map((r) => [
     r.id,
-    `"${r.fullName}"`,
-    `"${r.email}"`,
-    `"${r.schoolCollege}"`,
-    `"${r.classYear}"`,
-    `"${r.city}"`,
-    `"${r.techInterests.join(", ")}"`,
+    `"${r.fullName || ""}"`,
+    `"${r.email || ""}"`,
+    `"${r.phoneNumber || ""}"`,
+    `"${r.schoolCollege || ""}"`,
+    `"${r.classYear || ""}"`,
+    `"${r.city || ""}"`,
+    `"${(r.techInterests || []).join(", ")}"`,
     `"${r.registeredProgram || "N/A"}"`,
-    r.status,
-    r.registeredAt
+    r.status || "Confirmed",
+    r.registeredAt || "",
+    `"${(r.notes || "").replace(/"/g, '""')}"`
   ]);
 
-  const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+  const csvContent =
+    "data:text/csv;charset=utf-8," +
+    [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `kre8ech_registrations_${new Date().toISOString().split("T")[0]}.csv`);
+  link.setAttribute(
+    "download",
+    `kre8ech_student_records_${new Date().toISOString().split("T")[0]}.csv`
+  );
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

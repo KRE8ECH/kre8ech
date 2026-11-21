@@ -163,9 +163,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/admin" className="hover:text-[#F6C900] transition-colors flex items-center gap-1 text-gray-400">
-                  <Shield className="w-3 h-3" />
-                  <span>Admin Control</span>
+                <Link href="/admin" className="hover:text-[#F6C900] transition-colors flex items-center gap-1.5 text-gray-400">
+                  <Shield className="w-3.5 h-3.5 text-[#F6C900]" />
+                  <span>Admin Records Portal</span>
                 </Link>
               </li>
             </ul>

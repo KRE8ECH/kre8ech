@@ -126,13 +126,15 @@ export interface StudentRegistration {
   id: string;
   fullName: string;
   email: string;
+  phoneNumber?: string;
   schoolCollege: string;
   classYear: string;
   city: string;
   techInterests: string[];
   registeredProgram?: string;
-  status: "Pending" | "Confirmed" | "Shortlisted";
+  status: "Pending" | "Confirmed" | "Shortlisted" | "Contacted";
   registeredAt: string;
+  notes?: string;
 }
 
 export interface Announcement {

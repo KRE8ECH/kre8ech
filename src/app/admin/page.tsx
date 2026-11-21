@@ -18,10 +18,29 @@ import {
   Edit3,
   CheckCircle2,
   Download,
+  Upload,
   Search,
   Save,
-  ArrowRight
+  ArrowRight,
+  Phone,
+  Mail,
+  Eye,
+  X,
+  Building,
+  GraduationCap,
+  MapPin,
+  ExternalLink,
+  MessageSquare,
+  Sparkles,
+  RefreshCw,
+  SlidersHorizontal,
+  Link as LinkIcon,
+  HelpCircle,
+  Clock,
+  Send,
+  AlertCircle
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 import {
   isAdminAuthenticated,
   setAdminAuthenticated,
@@ -41,7 +60,12 @@ import {
   addProblemStatement,
   deleteProblemStatement,
   getStudentRegistrations,
+  saveStudentRegistrations,
+  updateStudentRegistration,
+  deleteStudentRegistration,
   exportRegistrationsToCSV,
+  getWebhookUrl,
+  saveWebhookUrl,
   getAnnouncements,
   saveAnnouncements
 } from "@/lib/storage";
@@ -56,19 +80,29 @@ import {
 } from "@/types";
 
 type AdminTab =
+  | "registrations"
   | "curriculum"
   | "projects"
   | "achievements"
   | "hackathons"
   | "problemStatements"
-  | "registrations"
   | "announcements";
+
+const availableInterestOptions = [
+  "Artificial Intelligence & LLMs",
+  "Web Development & Frontend",
+  "Mobile Apps (Android / iOS)",
+  "Smart IoT & Robotics",
+  "UI/UX Design & Prototyping",
+  "Automation & Scripts",
+  "Competitive Hackathons"
+];
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passcode, setPasscode] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab] = useState<AdminTab>("curriculum");
+  const [activeTab, setActiveTab] = useState<AdminTab>("registrations");
 
   // State data
   const [program, setProgram] = useState<ProgramOverview | null>(null);
@@ -82,8 +116,38 @@ export default function AdminPage() {
   // Feedback banner
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  // Search in registrations
+  // Registrations Filter & Search
   const [regSearch, setRegSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [programFilter, setProgramFilter] = useState<string>("All");
+
+  // Dossier Modal
+  const [selectedStudent, setSelectedStudent] = useState<StudentRegistration | null>(null);
+  const [editNotes, setEditNotes] = useState("");
+
+  // Add Student Modal
+  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    schoolCollege: "",
+    classYear: "Class 9",
+    city: "",
+    registeredProgram: "Four-Week Builder Program Cohort 1",
+    techInterests: ["Artificial Intelligence & LLMs"],
+    status: "Confirmed" as StudentRegistration["status"],
+    notes: ""
+  });
+
+  // Webhook Sync Modal / Panel
+  const [isWebhookOpen, setIsWebhookOpen] = useState(false);
+  const [webhookUrlInput, setWebhookUrlInput] = useState("");
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+
+  // Backup / JSON Import Modal
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [jsonImportText, setJsonImportText] = useState("");
 
   useEffect(() => {
     const isAuth = isAdminAuthenticated();
@@ -99,18 +163,19 @@ export default function AdminPage() {
     setAchievements(getAchievements());
     setHackathons(getHackathons());
     setProblemStatements(getProblemStatements());
-    setRegistrations(getStudentRegistrations());
+    const regs = getStudentRegistrations();
+    setRegistrations(regs);
     setAnnouncements(getAnnouncements());
+    setWebhookUrlInput(getWebhookUrl());
   };
 
   const showFeedback = (msg: string) => {
     setFeedback(msg);
-    setTimeout(() => setFeedback(null), 3000);
+    setTimeout(() => setFeedback(null), 3500);
   };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default passkey for team members
     if (passcode === "kre8ech2026" || passcode === "admin123" || passcode === "kre8ech") {
       setAdminAuthenticated(true);
       setIsAuthenticated(true);
@@ -126,19 +191,167 @@ export default function AdminPage() {
     setIsAuthenticated(false);
   };
 
+  // --- Registration Actions ---
+  const handleOpenDossier = (student: StudentRegistration) => {
+    setSelectedStudent(student);
+    setEditNotes(student.notes || "");
+  };
+
+  const handleCloseDossier = () => {
+    setSelectedStudent(null);
+  };
+
+  const handleStatusChange = (id: string, newStatus: StudentRegistration["status"]) => {
+    const target = registrations.find((r) => r.id === id);
+    if (!target) return;
+    const updated: StudentRegistration = { ...target, status: newStatus };
+    updateStudentRegistration(updated);
+    const refreshed = getStudentRegistrations();
+    setRegistrations(refreshed);
+    if (selectedStudent && selectedStudent.id === id) {
+      setSelectedStudent(updated);
+    }
+    showFeedback(`Student status updated to "${newStatus}"!`);
+  };
+
+  const handleSaveNotes = () => {
+    if (!selectedStudent) return;
+    const updated: StudentRegistration = { ...selectedStudent, notes: editNotes };
+    updateStudentRegistration(updated);
+    setSelectedStudent(updated);
+    setRegistrations(getStudentRegistrations());
+    showFeedback("Admin notes saved successfully!");
+  };
+
+  const handleDeleteRegistration = (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete the registration record for "${name}"?`)) {
+      deleteStudentRegistration(id);
+      setRegistrations(getStudentRegistrations());
+      if (selectedStudent && selectedStudent.id === id) {
+        setSelectedStudent(null);
+      }
+      showFeedback(`Record for ${name} removed.`);
+    }
+  };
+
+  const handleManualAddStudent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualForm.fullName.trim() || !manualForm.email.trim() || !manualForm.phoneNumber.trim()) {
+      alert("Please fill in Student Name, Phone, and Email.");
+      return;
+    }
+
+    const newRecord: StudentRegistration = {
+      id: `reg-${Date.now()}`,
+      fullName: manualForm.fullName.trim(),
+      email: manualForm.email.trim(),
+      phoneNumber: manualForm.phoneNumber.trim(),
+      schoolCollege: manualForm.schoolCollege.trim() || "Independent",
+      classYear: manualForm.classYear,
+      city: manualForm.city.trim() || "India",
+      registeredProgram: manualForm.registeredProgram,
+      techInterests: manualForm.techInterests,
+      status: manualForm.status,
+      registeredAt: new Date().toISOString().split("T")[0],
+      notes: manualForm.notes.trim()
+    };
+
+    const next = [newRecord, ...registrations];
+    saveStudentRegistrations(next);
+    setRegistrations(next);
+    setIsAddStudentOpen(false);
+    showFeedback(`Record added for ${newRecord.fullName}!`);
+
+    // Reset manual form
+    setManualForm({
+      fullName: "",
+      email: "",
+      phoneNumber: "",
+      schoolCollege: "",
+      classYear: "Class 9",
+      city: "",
+      registeredProgram: "Four-Week Builder Program Cohort 1",
+      techInterests: ["Artificial Intelligence & LLMs"],
+      status: "Confirmed",
+      notes: ""
+    });
+  };
+
+  const handleSaveWebhook = () => {
+    saveWebhookUrl(webhookUrlInput.trim());
+    showFeedback("Google Sheets / Webhook URL saved successfully!");
+  };
+
+  const handleTestWebhook = async () => {
+    if (!webhookUrlInput.trim()) {
+      alert("Please enter a valid Webhook URL first.");
+      return;
+    }
+    setIsTestingWebhook(true);
+    try {
+      const sample = {
+        id: "test-ping",
+        fullName: "Test Lead (KRE8ECH Verification)",
+        email: "kre8ech@gmail.com",
+        phoneNumber: "+91 98757 21958",
+        schoolCollege: "KRE8ECH Innovation Lab",
+        classYear: "Class 10",
+        city: "Delhi NCR",
+        registeredProgram: "Four-Week Builder Program Cohort 1",
+        techInterests: ["AI & LLMs", "Hackathons"],
+        status: "Confirmed",
+        registeredAt: new Date().toISOString().split("T")[0],
+        notes: "Test webhook verification ping sent from Admin Dashboard"
+      };
+
+      await fetch(webhookUrlInput.trim(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sample),
+        mode: "no-cors"
+      });
+
+      showFeedback("Test payload dispatched to webhook!");
+    } catch (e) {
+      alert("Error sending test payload: " + (e as Error).message);
+    } finally {
+      setIsTestingWebhook(false);
+    }
+  };
+
+  const handleExportJSON = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(registrations, null, 2));
+    const dlAnchor = document.createElement("a");
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `kre8ech_student_records_backup_${new Date().toISOString().split("T")[0]}.json`);
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    document.body.removeChild(dlAnchor);
+  };
+
+  const handleImportJSON = () => {
+    try {
+      const parsed = JSON.parse(jsonImportText);
+      if (!Array.isArray(parsed)) {
+        alert("Invalid format: JSON must be an array of student registration records.");
+        return;
+      }
+      saveStudentRegistrations(parsed);
+      setRegistrations(parsed);
+      setIsImportModalOpen(false);
+      setJsonImportText("");
+      showFeedback(`Successfully restored ${parsed.length} student records!`);
+    } catch (e) {
+      alert("Failed to parse JSON: " + (e as Error).message);
+    }
+  };
+
   // --- Curriculum Actions ---
   const handleSaveCurriculum = () => {
     if (program) {
       saveProgramData(program);
       showFeedback("Curriculum updated and published live!");
     }
-  };
-
-  const handleAddDayTopic = (weekIndex: number, dayIndex: number, newTopic: string) => {
-    if (!program || !newTopic.trim()) return;
-    const nextWeeks = [...program.weeks];
-    nextWeeks[weekIndex].days[dayIndex].topics.push(newTopic.trim());
-    setProgram({ ...program, weeks: nextWeeks });
   };
 
   // --- Projects Actions ---
@@ -217,12 +430,30 @@ export default function AdminPage() {
   };
 
   // Filter registrations
-  const filteredRegs = registrations.filter(
-    (r) =>
-      r.fullName.toLowerCase().includes(regSearch.toLowerCase()) ||
-      r.schoolCollege.toLowerCase().includes(regSearch.toLowerCase()) ||
-      r.city.toLowerCase().includes(regSearch.toLowerCase())
-  );
+  const filteredRegs = registrations.filter((r) => {
+    const q = regSearch.toLowerCase();
+    const matchesSearch =
+      !q ||
+      r.fullName.toLowerCase().includes(q) ||
+      r.email.toLowerCase().includes(q) ||
+      (r.phoneNumber || "").toLowerCase().includes(q) ||
+      r.schoolCollege.toLowerCase().includes(q) ||
+      r.city.toLowerCase().includes(q) ||
+      (r.registeredProgram || "").toLowerCase().includes(q) ||
+      (r.notes || "").toLowerCase().includes(q);
+
+    const matchesStatus = statusFilter === "All" || r.status === statusFilter;
+    const matchesProgram = programFilter === "All" || r.registeredProgram === programFilter;
+
+    return matchesSearch && matchesStatus && matchesProgram;
+  });
+
+  // Calculate Metrics
+  const totalStudents = registrations.length;
+  const confirmedStudents = registrations.filter((r) => r.status === "Confirmed").length;
+  const pendingStudents = registrations.filter((r) => r.status === "Pending" || !r.status).length;
+  const uniqueCities = new Set(registrations.map((r) => (r.city || "").trim().toLowerCase()).filter(Boolean)).size;
+  const uniqueSchools = new Set(registrations.map((r) => (r.schoolCollege || "").trim().toLowerCase()).filter(Boolean)).size;
 
   // Authentication Lock Screen
   if (!isAuthenticated) {
@@ -233,22 +464,23 @@ export default function AdminPage() {
             <div className="w-14 h-14 rounded-2xl bg-[#121316] text-[#F6C900] mx-auto flex items-center justify-center border border-gray-800 shadow-sm">
               <Lock className="w-7 h-7" />
             </div>
-            <h1 className="text-2xl font-black text-[#202124]">KRE8ECH Admin Control</h1>
+            <h1 className="text-2xl font-black text-[#202124]">KRE8ECH Admin Records</h1>
             <p className="text-xs text-gray-500">
-              Restricted portal for KRE8ECH core team members and program directors.
+              Access live applicant records, student dossiers, cohort management, and curriculum controls.
             </p>
           </div>
 
           {loginError && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl">
-              {loginError}
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{loginError}</span>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-bold uppercase text-gray-700 mb-1">
-                Admin Passcode
+                Admin Master Passcode
               </label>
               <input
                 type="password"
@@ -264,14 +496,27 @@ export default function AdminPage() {
               type="submit"
               className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#202124] text-white font-bold text-sm hover:bg-black transition-colors shadow-sm"
             >
-              <span>Unlock Admin Panel</span>
+              <span>Unlock Admin Dashboard</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          <p className="text-center text-[11px] text-gray-400">
-            Passcode for reviewer test: <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-bold">kre8ech2026</code>
-          </p>
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setPasscode("kre8ech2026");
+                setAdminAuthenticated(true);
+                setIsAuthenticated(true);
+                setLoginError("");
+                loadAllData();
+              }}
+              className="text-xs text-[#202124] bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-3.5 py-1.5 rounded-full font-bold transition-colors inline-flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Click for Instant Access (Passcode: kre8ech2026)</span>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -284,13 +529,16 @@ export default function AdminPage() {
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full bg-[#F6C900] text-[#202124] text-xs font-black uppercase">
-              Admin CMS
+              Admin Portal
             </span>
-            <span className="text-xs text-gray-400">Content Management & Registrations</span>
+            <span className="text-xs text-gray-400">Student Admissions & Operations</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white mt-1">
-            KRE8ECH Team Control Center
+            KRE8ECH Student Records & Operations
           </h1>
+          <p className="text-xs text-gray-400 mt-1">
+            View full details of anyone who joins KRE8ECH, chat on WhatsApp, export records, or update cohort statuses.
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -318,18 +566,21 @@ export default function AdminPage() {
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span>{feedback}</span>
           </div>
+          <button onClick={() => setFeedback(null)} className="text-emerald-700 hover:text-emerald-900">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-200">
         {[
+          { key: "registrations", label: `Student Records & Leads (${registrations.length})`, icon: Users },
           { key: "curriculum", label: "Program & Curriculum", icon: Layers },
           { key: "projects", label: "Projects & Builds", icon: Code },
           { key: "achievements", label: "Achievements", icon: Trophy },
           { key: "hackathons", label: "Hackathons", icon: Calendar },
           { key: "problemStatements", label: "Problem Statements", icon: FileText },
-          { key: "registrations", label: `Student Registrations (${registrations.length})`, icon: Users },
           { key: "announcements", label: "Announcements", icon: Bell },
         ].map((t) => {
           const Icon = t.icon;
@@ -352,7 +603,792 @@ export default function AdminPage() {
       </div>
 
       {/* =========================================================
-          TAB 1: CURRICULUM MANAGEMENT
+          TAB 1: STUDENT REGISTRATIONS & RECORDS (PRIMARY)
+          ========================================================= */}
+      {activeTab === "registrations" && (
+        <div className="space-y-6">
+          {/* Metrics Overview Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-bold uppercase text-gray-400">Total Applicants</span>
+              <div className="text-3xl font-black text-[#202124] mt-1">{totalStudents}</div>
+              <span className="text-[10px] text-gray-500 font-medium">Joined via Website</span>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-bold uppercase text-emerald-600">Confirmed Seats</span>
+              <div className="text-3xl font-black text-emerald-600 mt-1">{confirmedStudents}</div>
+              <span className="text-[10px] text-gray-500 font-medium">Cohort 1 Builders</span>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-bold uppercase text-amber-600">Schools & Colleges</span>
+              <div className="text-3xl font-black text-[#202124] mt-1">{uniqueSchools}</div>
+              <span className="text-[10px] text-gray-500 font-medium">Unique Institutions</span>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-bold uppercase text-blue-600">Geographic Reach</span>
+              <div className="text-3xl font-black text-[#202124] mt-1">{uniqueCities}</div>
+              <span className="text-[10px] text-gray-500 font-medium">Cities Represented</span>
+            </div>
+          </div>
+
+          {/* Sync & Integration Banner */}
+          <div className="bg-[#FFF9E8] border border-[#F6C900]/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#F6C900]" />
+                <span className="text-xs font-black text-[#202124] uppercase tracking-wide">
+                  Live Sync & WhatsApp Notification
+                </span>
+              </div>
+              <p className="text-xs text-gray-700">
+                Applicants automatically prompt a WhatsApp message to <strong>+91 98757 21958</strong> upon registration. You can also connect a Google Sheets Webhook to stream leads live.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsWebhookOpen(!isWebhookOpen)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-[#202124] hover:bg-gray-50 transition-colors shadow-2xs"
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>{webhookUrlInput ? "Webhook Connected" : "Connect Google Sheets"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Webhook Configuration Panel (Collapsible) */}
+          {isWebhookOpen && (
+            <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm space-y-3 animate-in fade-in duration-150">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-black uppercase text-[#202124]">
+                    Google Sheets / Zapier / Make Webhook Endpoint
+                  </h4>
+                  <p className="text-[11px] text-gray-500">
+                    Paste your Google Apps Script Web App URL or Formspree/Make webhook here. Every applicant will automatically be sent to this endpoint in real time.
+                  </p>
+                </div>
+                <button onClick={() => setIsWebhookOpen(false)} className="text-gray-400 hover:text-gray-700">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="url"
+                  placeholder="https://script.google.com/macros/s/.../exec"
+                  value={webhookUrlInput}
+                  onChange={(e) => setWebhookUrlInput(e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-xl border border-gray-300 text-xs focus:outline-none focus:border-[#202124]"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveWebhook}
+                  className="px-4 py-2 rounded-xl bg-[#202124] text-white text-xs font-bold hover:bg-black transition-colors"
+                >
+                  Save URL
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTestWebhook}
+                  disabled={isTestingWebhook}
+                  className="px-4 py-2 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold hover:bg-amber-200 transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isTestingWebhook ? "Sending..." : "Send Test Lead"}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Controls Bar: Search, Filters, Add, Export */}
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              {/* Search input */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search by student name, phone, email, school, or city..."
+                  value={regSearch}
+                  onChange={(e) => setRegSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 text-xs focus:outline-none focus:border-[#202124] shadow-2xs"
+                />
+                {regSearch && (
+                  <button
+                    onClick={() => setRegSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddStudentOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-extrabold text-xs transition-all shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Student Record</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => exportRegistrationsToCSV(filteredRegs)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-900 text-white font-bold text-xs hover:bg-black transition-colors"
+                  title="Download CSV spreadsheet with all fields including phone and notes"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export CSV</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportJSON}
+                  className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-colors"
+                  title="Download full JSON backup"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Backup JSON</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-colors"
+                  title="Import or restore records from JSON backup"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Import</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter pills */}
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="text-gray-400 font-bold text-[11px] mr-1 uppercase">Status:</span>
+                {["All", "Confirmed", "Pending", "Shortlisted", "Contacted"].map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                      statusFilter === st
+                        ? "bg-[#202124] text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-400 font-bold text-[11px] uppercase">Program:</span>
+                <select
+                  value={programFilter}
+                  onChange={(e) => setProgramFilter(e.target.value)}
+                  className="px-2.5 py-1 rounded-xl border border-gray-200 text-xs bg-white font-medium focus:outline-none"
+                >
+                  <option value="All">All Programs</option>
+                  <option value="Four-Week Builder Program Cohort 1">Four-Week Builder Program</option>
+                  <option value="Offline Hackathon Showcase 2026">Grand Offline Hackathon 2026</option>
+                  <option value="Weekend Ideathon Sprint">Weekend Ideathon Sprint</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Student Registrations Table */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-black text-[#202124] uppercase tracking-wide">
+                  Registered Applicants ({filteredRegs.length})
+                </h3>
+                <p className="text-[11px] text-gray-500">
+                  Click on any student row or the &quot;View Dossier&quot; button to see their complete profile, WhatsApp, tech interests, and notes.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={loadAllData}
+                className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
+                title="Refresh Table"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+
+            {filteredRegs.length === 0 ? (
+              <div className="py-16 text-center space-y-3">
+                <Users className="w-10 h-10 text-gray-300 mx-auto" />
+                <h4 className="text-sm font-bold text-gray-700">No student records found</h4>
+                <p className="text-xs text-gray-400 max-w-sm mx-auto">
+                  {regSearch || statusFilter !== "All"
+                    ? "Try adjusting your search query or status filter."
+                    : "No registrations yet. When a student clicks 'Join KRE8ECH' and submits the form, their complete details will show up here."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsAddStudentOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-[#F6C900] text-[#202124] text-xs font-bold"
+                >
+                  Add a Student Record Manually
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-gray-700">
+                  <thead className="bg-gray-50/80 text-gray-500 uppercase tracking-wider text-[10px] font-bold border-b border-gray-100">
+                    <tr>
+                      <th className="p-3.5">Student Details</th>
+                      <th className="p-3.5">WhatsApp / Phone</th>
+                      <th className="p-3.5">School / College</th>
+                      <th className="p-3.5">Class</th>
+                      <th className="p-3.5">City</th>
+                      <th className="p-3.5">Selected Program</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5">Applied Date</th>
+                      <th className="p-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredRegs.map((reg) => {
+                      const cleanPhone = (reg.phoneNumber || "").replace(/[^\d+]/g, "");
+                      const waLink = `https://wa.me/${cleanPhone.replace("+", "")}?text=${encodeURIComponent(
+                        `Hi ${reg.fullName}, greetings from KRE8ECH! We received your application for the ${
+                          reg.registeredProgram || "Four-Week Builder Program"
+                        }.`
+                      )}`;
+
+                      return (
+                        <tr
+                          key={reg.id}
+                          className="hover:bg-amber-50/30 transition-colors group cursor-pointer"
+                          onClick={() => handleOpenDossier(reg)}
+                        >
+                          {/* Student Details */}
+                          <td className="p-3.5 font-bold text-[#202124]">
+                            <div className="text-sm font-extrabold flex items-center gap-1.5">
+                              <span>{reg.fullName}</span>
+                            </div>
+                            <div className="text-[11px] text-gray-500 font-normal flex items-center gap-1 mt-0.5">
+                              <Mail className="w-3 h-3 text-gray-400" />
+                              <a
+                                href={`mailto:${reg.email}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="hover:underline hover:text-[#202124]"
+                              >
+                                {reg.email}
+                              </a>
+                            </div>
+                          </td>
+
+                          {/* Phone / WhatsApp */}
+                          <td className="p-3.5" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-800">
+                                {reg.phoneNumber || "Not provided"}
+                              </span>
+                              {reg.phoneNumber && (
+                                <div className="flex items-center gap-1">
+                                  <a
+                                    href={waLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-colors"
+                                    title="Chat on WhatsApp"
+                                  >
+                                    <WhatsAppIcon className="w-3.5 h-3.5" />
+                                  </a>
+                                  <a
+                                    href={`tel:${reg.phoneNumber}`}
+                                    className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                                    title="Call Student"
+                                  >
+                                    <Phone className="w-3.5 h-3.5" />
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* School */}
+                          <td className="p-3.5 max-w-[180px]">
+                            <span className="line-clamp-2 text-gray-700 font-medium">
+                              {reg.schoolCollege}
+                            </span>
+                          </td>
+
+                          {/* Class */}
+                          <td className="p-3.5 font-bold text-[#202124]">
+                            <span className="px-2 py-0.5 rounded-md bg-gray-100 text-[11px]">
+                              {reg.classYear}
+                            </span>
+                          </td>
+
+                          {/* City */}
+                          <td className="p-3.5 text-gray-600 font-medium">{reg.city}</td>
+
+                          {/* Program */}
+                          <td className="p-3.5 max-w-xs">
+                            <span className="line-clamp-1 font-semibold text-gray-800 text-[11px]">
+                              {reg.registeredProgram || "Four-Week Builder Program"}
+                            </span>
+                          </td>
+
+                          {/* Status */}
+                          <td className="p-3.5" onClick={(e) => e.stopPropagation()}>
+                            <select
+                              value={reg.status || "Confirmed"}
+                              onChange={(e) =>
+                                handleStatusChange(
+                                  reg.id,
+                                  e.target.value as StudentRegistration["status"]
+                                )
+                              }
+                              className={`text-[10px] font-extrabold px-2 py-1 rounded-lg border focus:outline-none transition-colors ${
+                                reg.status === "Confirmed"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                  : reg.status === "Pending"
+                                  ? "bg-amber-50 text-amber-800 border-amber-300"
+                                  : reg.status === "Shortlisted"
+                                  ? "bg-blue-50 text-blue-800 border-blue-300"
+                                  : "bg-purple-50 text-purple-800 border-purple-300"
+                              }`}
+                            >
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Shortlisted">Shortlisted</option>
+                              <option value="Contacted">Contacted</option>
+                            </select>
+                          </td>
+
+                          {/* Date */}
+                          <td className="p-3.5 text-gray-400 text-[11px] whitespace-nowrap">
+                            {reg.registeredAt}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="p-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDossier(reg)}
+                                className="p-1.5 rounded-lg bg-gray-100 hover:bg-[#202124] hover:text-white text-gray-700 transition-colors"
+                                title="View Full Dossier"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteRegistration(reg.id, reg.fullName)}
+                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                                title="Delete Record"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          STUDENT DOSSIER MODAL
+          ========================================================= */}
+      {selectedStudent && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-gray-100">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-gray-100 text-gray-600">
+                    ID: {selectedStudent.id}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    Applied: {selectedStudent.registeredAt}
+                  </span>
+                </div>
+                <h3 className="text-2xl font-black text-[#202124]">
+                  {selectedStudent.fullName}
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCloseDossier}
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Contact Bar */}
+            <div className="flex flex-wrap items-center gap-2">
+              {selectedStudent.phoneNumber && (
+                <a
+                  href={`https://wa.me/${(selectedStudent.phoneNumber || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                    `Hi ${selectedStudent.fullName}, this is the KRE8ECH Team regarding your ${
+                      selectedStudent.registeredProgram || "Builder Program"
+                    } registration.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-black shadow-sm transition-all"
+                >
+                  <WhatsAppIcon className="w-4 h-4" />
+                  <span>Chat on WhatsApp</span>
+                </a>
+              )}
+
+              {selectedStudent.phoneNumber && (
+                <a
+                  href={`tel:${selectedStudent.phoneNumber}`}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5 text-gray-600" />
+                  <span>Call {selectedStudent.phoneNumber}</span>
+                </a>
+              )}
+
+              <a
+                href={`mailto:${selectedStudent.email}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5 text-gray-600" />
+                <span>Send Email</span>
+              </a>
+            </div>
+
+            {/* Full Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-gray-400">School / College</span>
+                <div className="font-bold text-[#202124] flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span>{selectedStudent.schoolCollege}</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-gray-400">Class / Grade & City</span>
+                <div className="font-bold text-[#202124] flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span>{selectedStudent.classYear} • {selectedStudent.city}</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1 sm:col-span-2">
+                <span className="text-[10px] uppercase font-bold text-gray-400">Applied Program</span>
+                <div className="font-extrabold text-[#202124]">
+                  {selectedStudent.registeredProgram || "Four-Week Builder Program Cohort 1"}
+                </div>
+              </div>
+            </div>
+
+            {/* Technology Interests */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase text-gray-500">
+                Technology Interests Chosen by Student:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {(selectedStudent.techInterests || []).map((tech, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-950 font-bold text-xs"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Status Selector */}
+            <div className="space-y-2 pt-2 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-gray-500">
+                  Update Enrollment Status:
+                </span>
+                <select
+                  value={selectedStudent.status || "Confirmed"}
+                  onChange={(e) =>
+                    handleStatusChange(
+                      selectedStudent.id,
+                      e.target.value as StudentRegistration["status"]
+                    )
+                  }
+                  className="px-3 py-1.5 rounded-xl border border-gray-300 font-bold text-xs bg-white focus:outline-none"
+                >
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Pending">Pending Review</option>
+                  <option value="Shortlisted">Shortlisted for Hackathon</option>
+                  <option value="Contacted">Contacted via Phone</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Admin Internal Notes */}
+            <div className="space-y-2 pt-2 border-t border-gray-100">
+              <label className="block text-xs font-bold uppercase text-gray-500">
+                Internal Admin Notes & Follow-ups:
+              </label>
+              <textarea
+                rows={3}
+                placeholder="e.g. Spoke to parent on 21st Nov. Confirmed interest in AI track. Fee paid via UPI..."
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                className="w-full p-3 rounded-2xl border border-gray-200 text-xs focus:outline-none focus:border-[#202124]"
+              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSaveNotes}
+                  className="px-4 py-2 rounded-xl bg-[#202124] text-white text-xs font-bold hover:bg-black transition-colors"
+                >
+                  Save Internal Notes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          ADD STUDENT MANUALLY MODAL
+          ========================================================= */}
+      {isAddStudentOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl relative my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h3 className="text-xl font-black text-[#202124]">Add Student Record</h3>
+                <p className="text-xs text-gray-500">Manually log a phone lead or offline registration.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddStudentOpen(false)}
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleManualAddStudent} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold uppercase text-gray-600 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Diya Sengupta"
+                  value={manualForm.fullName}
+                  onChange={(e) => setManualForm({ ...manualForm, fullName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#202124]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">WhatsApp / Phone *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={manualForm.phoneNumber}
+                    onChange={(e) => setManualForm({ ...manualForm, phoneNumber: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#202124]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">Email *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="diya@example.com"
+                    value={manualForm.email}
+                    onChange={(e) => setManualForm({ ...manualForm, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#202124]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">School / College</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Modern School"
+                    value={manualForm.schoolCollege}
+                    onChange={(e) => setManualForm({ ...manualForm, schoolCollege: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#202124]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">City</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Gurugram"
+                    value={manualForm.city}
+                    onChange={(e) => setManualForm({ ...manualForm, city: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#202124]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">Class / Year</label>
+                  <select
+                    value={manualForm.classYear}
+                    onChange={(e) => setManualForm({ ...manualForm, classYear: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white"
+                  >
+                    <option value="Class 9">Class 9</option>
+                    <option value="Class 10">Class 10</option>
+                    <option value="Class 11">Class 11</option>
+                    <option value="Class 12">Class 12</option>
+                    <option value="College 1st Year">College 1st Year</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">Initial Status</label>
+                  <select
+                    value={manualForm.status}
+                    onChange={(e) =>
+                      setManualForm({
+                        ...manualForm,
+                        status: e.target.value as StudentRegistration["status"]
+                      })
+                    }
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white"
+                  >
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Shortlisted">Shortlisted</option>
+                    <option value="Contacted">Contacted</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold uppercase text-gray-600 mb-1">Select Program</label>
+                <select
+                  value={manualForm.registeredProgram}
+                  onChange={(e) => setManualForm({ ...manualForm, registeredProgram: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white"
+                >
+                  <option value="Four-Week Builder Program Cohort 1">
+                    Four-Week Builder Program (Cohort 1)
+                  </option>
+                  <option value="Offline Hackathon Showcase 2026">
+                    KRE8ECH Grand Offline Hackathon 2026
+                  </option>
+                  <option value="Weekend Ideathon Sprint">Weekend Ideathon Sprint</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold uppercase text-gray-600 mb-1">Internal Notes</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Registered via phone enquiry"
+                  value={manualForm.notes}
+                  onChange={(e) => setManualForm({ ...manualForm, notes: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddStudentOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-[#F6C900] text-[#202124] font-black hover:bg-[#E5BA00]"
+                >
+                  Save Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          IMPORT JSON MODAL
+          ========================================================= */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <h3 className="text-xl font-black text-[#202124]">Restore Records from JSON</h3>
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500">
+              Paste the contents of a backup JSON file to restore registrations into your dashboard.
+            </p>
+
+            <textarea
+              rows={8}
+              placeholder="Paste JSON array here..."
+              value={jsonImportText}
+              onChange={(e) => setJsonImportText(e.target.value)}
+              className="w-full p-3 font-mono text-xs rounded-xl border border-gray-200 focus:outline-none"
+            />
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleImportJSON}
+                className="px-5 py-2 rounded-xl bg-[#202124] text-white text-xs font-bold hover:bg-black"
+              >
+                Restore Records
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          TAB 2: CURRICULUM MANAGEMENT
           ========================================================= */}
       {activeTab === "curriculum" && program && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-8">
@@ -375,123 +1411,51 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Program Overview Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="block font-bold text-gray-700 mb-1">Program Title</label>
+              <label className="block font-bold uppercase text-gray-500 mb-1">Program Title</label>
               <input
                 type="text"
                 value={program.title}
                 onChange={(e) => setProgram({ ...program, title: e.target.value })}
-                className="w-full p-2.5 rounded-xl border border-gray-300 font-semibold"
+                className="w-full p-2.5 rounded-xl border border-gray-200 font-bold"
               />
             </div>
             <div>
-              <label className="block font-bold text-gray-700 mb-1">Tagline</label>
+              <label className="block font-bold uppercase text-gray-500 mb-1">Tagline</label>
               <input
                 type="text"
                 value={program.tagline}
                 onChange={(e) => setProgram({ ...program, tagline: e.target.value })}
-                className="w-full p-2.5 rounded-xl border border-gray-300 font-semibold"
+                className="w-full p-2.5 rounded-xl border border-gray-200"
               />
             </div>
           </div>
 
-          {/* Weeks Accordion / Editor */}
-          <div className="space-y-6 pt-2">
-            <h3 className="text-base font-bold text-[#202124]">Weekly Learning Journey</h3>
-            {program.weeks.map((week, wIdx) => (
-              <div key={week.id} className="p-5 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black px-2.5 py-0.5 rounded bg-[#FFF9E8] border border-[#F6C900] text-[#202124]">
-                    WEEK 0{week.weekNumber}
-                  </span>
-                  <span className="text-xs text-gray-500">{week.sessionFormat}</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <label className="block font-bold text-gray-700 mb-1">Week Title</label>
-                    <input
-                      type="text"
-                      value={week.title}
-                      onChange={(e) => {
-                        const nextWeeks = [...program.weeks];
-                        nextWeeks[wIdx].title = e.target.value;
-                        setProgram({ ...program, weeks: nextWeeks });
-                      }}
-                      className="w-full p-2 rounded-lg border border-gray-300 font-semibold"
-                    />
+          <div className="space-y-6 pt-4 border-t border-gray-100">
+            <h3 className="text-sm font-black uppercase tracking-wide text-gray-700">
+              Curriculum Breakdown ({program.weeks.length} Weeks)
+            </h3>
+            <div className="space-y-4">
+              {program.weeks.map((week, wIndex) => (
+                <div key={week.id} className="p-5 rounded-2xl border border-gray-100 bg-gray-50/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold px-2.5 py-1 rounded bg-[#FFF9E8] text-[#202124] border border-[#F6C900]">
+                      {week.badge}
+                    </span>
+                    <span className="text-xs text-gray-500">{week.sessionFormat}</span>
                   </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 mb-1">Subtitle</label>
-                    <input
-                      type="text"
-                      value={week.subtitle}
-                      onChange={(e) => {
-                        const nextWeeks = [...program.weeks];
-                        nextWeeks[wIdx].subtitle = e.target.value;
-                        setProgram({ ...program, weeks: nextWeeks });
-                      }}
-                      className="w-full p-2 rounded-lg border border-gray-300"
-                    />
-                  </div>
+                  <h4 className="text-base font-black text-[#202124]">{week.title}</h4>
+                  <p className="text-xs text-gray-600">{week.description}</p>
                 </div>
-
-                {/* Days inside Week */}
-                <div className="space-y-3 pt-2">
-                  <h4 className="text-xs font-bold text-gray-600 uppercase">
-                    Daily Sessions ({week.days.length} Days)
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {week.days.map((day, dIdx) => (
-                      <div key={day.dayNumber} className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2">
-                        <div className="flex items-center justify-between font-bold">
-                          <span>Day 0{day.dayNumber}</span>
-                          {day.isHackathonDay && (
-                            <span className="text-[10px] text-amber-700 font-extrabold">Offline Hackathon</span>
-                          )}
-                        </div>
-                        <input
-                          type="text"
-                          value={day.title}
-                          onChange={(e) => {
-                            const nextWeeks = [...program.weeks];
-                            nextWeeks[wIdx].days[dIdx].title = e.target.value;
-                            setProgram({ ...program, weeks: nextWeeks });
-                          }}
-                          className="w-full p-1.5 rounded border border-gray-300 text-xs font-semibold bg-white"
-                        />
-                        <div className="space-y-1">
-                          <span className="text-[10px] text-gray-400 font-bold block">Topics ({day.topics.length}):</span>
-                          <ul className="text-[11px] text-gray-600 space-y-1">
-                            {day.topics.map((t, tIdx) => (
-                              <li key={tIdx} className="truncate">• {t}</li>
-                            ))}
-                          </ul>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newTop = prompt(`Add new topic for Day ${day.dayNumber}:`);
-                              if (newTop) handleAddDayTopic(wIdx, dIdx, newTop);
-                            }}
-                            className="text-[11px] text-blue-600 hover:underline font-bold mt-1"
-                          >
-                            + Add Topic
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {/* =========================================================
-          TAB 2: PROJECTS & BUILDS
+          TAB 3: PROJECTS
           ========================================================= */}
       {activeTab === "projects" && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-6">
@@ -566,15 +1530,13 @@ export default function AdminPage() {
       )}
 
       {/* =========================================================
-          TAB 3: ACHIEVEMENTS
+          TAB 4: ACHIEVEMENTS
           ========================================================= */}
       {activeTab === "achievements" && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-6">
           <div>
             <h2 className="text-xl font-black text-[#202124]">Achievements & Recognitions</h2>
-            <p className="text-xs text-gray-500">
-              Manage hackathon milestones and verified wins.
-            </p>
+            <p className="text-xs text-gray-500">Manage hackathon milestones and verified wins.</p>
           </div>
 
           <div className="space-y-4">
@@ -602,7 +1564,7 @@ export default function AdminPage() {
       )}
 
       {/* =========================================================
-          TAB 4: HACKATHONS
+          TAB 5: HACKATHONS
           ========================================================= */}
       {activeTab === "hackathons" && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-6">
@@ -620,7 +1582,7 @@ export default function AdminPage() {
                   id: `hack-${Date.now()}`,
                   title,
                   slug: `hackathon-${Date.now()}`,
-                  bannerImage: "/images/kre8ech-logo-full.png",
+                  bannerImage: "/images/kre8ech-wings.png",
                   description: "Student sprint and prototype challenge.",
                   date: "Upcoming",
                   venue: "Main Campus Hub",
@@ -683,7 +1645,7 @@ export default function AdminPage() {
       )}
 
       {/* =========================================================
-          TAB 5: PROBLEM STATEMENTS
+          TAB 6: PROBLEM STATEMENTS
           ========================================================= */}
       {activeTab === "problemStatements" && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-6">
@@ -727,9 +1689,7 @@ export default function AdminPage() {
                     onClick={() => {
                       const newStatus: "Open" | "Closed" = ps.status === "Open" ? "Closed" : "Open";
                       const updated = problemStatements.map((item) =>
-                        item.id === ps.id
-                          ? { ...item, status: newStatus }
-                          : item
+                        item.id === ps.id ? { ...item, status: newStatus } : item
                       );
                       saveProblemStatements(updated);
                       setProblemStatements(updated);
@@ -754,84 +1714,6 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================
-          TAB 6: STUDENT REGISTRATIONS
-          ========================================================= */}
-      {activeTab === "registrations" && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
-            <div>
-              <h2 className="text-xl font-black text-[#202124]">
-                Student Registrations ({filteredRegs.length})
-              </h2>
-              <p className="text-xs text-gray-500">
-                Live cohort applications, class levels, school records, and tech interests.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search students..."
-                  value={regSearch}
-                  onChange={(e) => setRegSearch(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-xl border border-gray-300 text-xs w-48 focus:outline-none"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => exportRegistrationsToCSV(registrations)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#202124] text-white font-bold text-xs hover:bg-black transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export CSV</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-gray-700">
-              <thead className="bg-gray-50 text-gray-600 uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="p-3">Student Name</th>
-                  <th className="p-3">School / College</th>
-                  <th className="p-3">Class</th>
-                  <th className="p-3">City</th>
-                  <th className="p-3">Selected Program</th>
-                  <th className="p-3">Date</th>
-                  <th className="p-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredRegs.map((reg) => (
-                  <tr key={reg.id} className="hover:bg-gray-50">
-                    <td className="p-3 font-bold text-[#202124]">
-                      <div>{reg.fullName}</div>
-                      <div className="text-[11px] text-gray-400 font-normal">{reg.email}</div>
-                    </td>
-                    <td className="p-3">{reg.schoolCollege}</td>
-                    <td className="p-3 font-semibold">{reg.classYear}</td>
-                    <td className="p-3">{reg.city}</td>
-                    <td className="p-3 max-w-xs truncate text-[11px]">
-                      {reg.registeredProgram || "Four-Week Builder Program"}
-                    </td>
-                    <td className="p-3 text-gray-400">{reg.registeredAt}</td>
-                    <td className="p-3">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        {reg.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       )}

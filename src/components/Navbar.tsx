@@ -95,17 +95,19 @@ export default function Navbar() {
 
           {/* CTA & Actions */}
           <div className="hidden md:flex items-center gap-4">
-            {/* Admin badge */}
-            {isAdminLoggedIn && (
-              <Link
-                href="/admin"
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-900 text-yellow-400 hover:bg-black transition-colors"
-                title="Admin Control Center"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Admin</span>
-              </Link>
-            )}
+            {/* Admin Portal access */}
+            <Link
+              href="/admin"
+              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full transition-colors ${
+                isAdminLoggedIn
+                  ? "bg-gray-900 text-yellow-400 hover:bg-black"
+                  : "text-gray-400 hover:text-[#202124] hover:bg-gray-100"
+              }`}
+              title="Admin Records Portal"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Admin</span>
+            </Link>
 
             {/* Student Account */}
             {isStudentLoggedIn ? (
@@ -205,6 +207,15 @@ export default function Navbar() {
             >
               <span>Join KRE8ECH</span>
               <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            <Link
+              href="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-semibold text-gray-500 hover:text-black"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Admin Records Portal</span>
             </Link>
           </div>
         </div>
