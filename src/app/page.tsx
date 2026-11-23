@@ -225,16 +225,16 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right Column: Students Collaboration Illustration with Technology Stickers */}
+          {/* Right Column: Students Collaboration Illustration */}
           <div className="lg:col-span-5 flex justify-center items-center">
-            <div className="relative w-full max-w-[500px]">
+            <div className="relative w-full max-w-[520px]">
               <Image
                 src="/images/students-collaboration.png"
-                alt="Students collaborating on projects with technology stickers"
-                width={505}
-                height={236}
+                alt="KRE8ECH student creators collaborating on tech projects and software prototypes"
+                width={1024}
+                height={660}
                 priority
-                className="w-full h-auto object-contain rounded-2xl"
+                className="w-full h-auto object-contain rounded-2xl shadow-sm border border-gray-100/80"
               />
             </div>
           </div>
