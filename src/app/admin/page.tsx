@@ -580,7 +580,11 @@ export default function AdminPage() {
       (h.notes || "").toLowerCase().includes(q);
 
     const matchesStatus = hackStatusFilter === "All" || h.status === hackStatusFilter;
-    const matchesBranch = hackBranchFilter === "All" || h.branch === hackBranchFilter;
+    const matchesBranch =
+      hackBranchFilter === "All" ||
+      h.branch === hackBranchFilter ||
+      h.branch.toLowerCase().includes(hackBranchFilter.toLowerCase()) ||
+      hackBranchFilter.toLowerCase().includes(h.branch.toLowerCase());
 
     return matchesSearch && matchesStatus && matchesBranch;
   });
@@ -1261,14 +1265,11 @@ export default function AdminPage() {
                 >
                   <option value="All">All Branches</option>
                   <option value="Computer Science & Engineering (CSE)">CSE</option>
-                  <option value="Information Technology (IT)">IT</option>
                   <option value="Artificial Intelligence & Machine Learning (AI & ML)">AI & ML</option>
-                  <option value="Data Science / Computer Science & Data">Data Science</option>
+                  <option value="Artificial Intelligence & Data Science">AI & DS</option>
                   <option value="Electronics & Communication Engineering (ECE)">ECE</option>
-                  <option value="Electrical & Electronics Engineering (EEE)">EEE</option>
-                  <option value="Mechanical Engineering (ME)">Mechanical</option>
-                  <option value="Civil Engineering (CE)">Civil</option>
-                  <option value="BCA / MCA / Computer Applications">BCA / MCA</option>
+                  <option value="Bachelor of Computer Applications">BCA</option>
+                  <option value="Bachelor of Business Administration">BBA</option>
                 </select>
               </div>
             </div>
@@ -1663,14 +1664,13 @@ export default function AdminPage() {
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white"
                   >
                     <option value="Computer Science & Engineering (CSE)">CSE</option>
-                    <option value="Information Technology (IT)">IT</option>
                     <option value="Artificial Intelligence & Machine Learning (AI & ML)">AI & ML</option>
-                    <option value="Data Science / Computer Science & Data">Data Science</option>
+                    <option value="Artificial Intelligence & Data Science (AI & DS)">AI & DS</option>
                     <option value="Electronics & Communication Engineering (ECE)">ECE</option>
-                    <option value="Electrical & Electronics Engineering (EEE)">EEE</option>
-                    <option value="Mechanical Engineering (ME)">Mechanical</option>
-                    <option value="Civil Engineering (CE)">Civil</option>
-                    <option value="BCA / MCA / Computer Applications">BCA / MCA</option>
+                    <option value="Bachelor of Computer Applications (BCA)">BCA</option>
+                    <option value="Bachelor of Business Administration (BBA)">BBA</option>
+                    <option value="Information Technology (IT)">IT</option>
+                    <option value="Other Tech / Degree Branch">Other</option>
                   </select>
                 </div>
                 <div>

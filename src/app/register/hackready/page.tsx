@@ -23,15 +23,13 @@ import { HackreadyRegistration } from "@/types";
 
 const branchOptions = [
   "Computer Science & Engineering (CSE)",
-  "Information Technology (IT)",
   "Artificial Intelligence & Machine Learning (AI & ML)",
-  "Data Science / Computer Science & Data",
+  "Artificial Intelligence & Data Science (AI & DS)",
   "Electronics & Communication Engineering (ECE)",
-  "Electrical & Electronics Engineering (EEE)",
-  "Mechanical Engineering (ME)",
-  "Civil Engineering (CE)",
-  "BCA / MCA / Computer Applications",
-  "Other Engineering / Tech Branch"
+  "Bachelor of Computer Applications (BCA)",
+  "Bachelor of Business Administration (BBA)",
+  "Information Technology (IT)",
+  "Other Tech / Degree Branch"
 ];
 
 const semesterOptions = [
