@@ -225,7 +225,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right Column: Students Collaboration Illustration */}
+          {/* Right Column: Students Collaboration Illustration (Sticker Style - Seamless with Background) */}
           <div className="lg:col-span-5 flex justify-center items-center">
             <div className="relative w-full max-w-[520px]">
               <Image
@@ -234,7 +234,7 @@ export default function HomePage() {
                 width={1024}
                 height={660}
                 priority
-                className="w-full h-auto object-contain rounded-2xl shadow-sm border border-gray-100/80"
+                className="w-full h-auto object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.06)] hover:scale-[1.02] transition-transform duration-300"
               />
             </div>
           </div>
