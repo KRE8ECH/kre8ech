@@ -38,7 +38,8 @@ import {
   HelpCircle,
   Clock,
   Send,
-  AlertCircle
+  AlertCircle,
+  Hash
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 import {
@@ -64,6 +65,11 @@ import {
   updateStudentRegistration,
   deleteStudentRegistration,
   exportRegistrationsToCSV,
+  getHackreadyRegistrations,
+  saveHackreadyRegistrations,
+  updateHackreadyRegistration,
+  deleteHackreadyRegistration,
+  exportHackreadyToCSV,
   getWebhookUrl,
   saveWebhookUrl,
   getAnnouncements,
@@ -76,11 +82,13 @@ import {
   Hackathon,
   ProblemStatement,
   StudentRegistration,
+  HackreadyRegistration,
   Announcement
 } from "@/types";
 
 type AdminTab =
   | "registrations"
+  | "hackready"
   | "curriculum"
   | "projects"
   | "achievements"
@@ -120,6 +128,26 @@ export default function AdminPage() {
   const [regSearch, setRegSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [programFilter, setProgramFilter] = useState<string>("All");
+
+  // Hackready Workshop state
+  const [hackreadyList, setHackreadyList] = useState<HackreadyRegistration[]>([]);
+  const [hackSearch, setHackSearch] = useState("");
+  const [hackStatusFilter, setHackStatusFilter] = useState<string>("All");
+  const [hackBranchFilter, setHackBranchFilter] = useState<string>("All");
+  const [selectedHackready, setSelectedHackready] = useState<HackreadyRegistration | null>(null);
+  const [editHackNotes, setEditHackNotes] = useState("");
+  const [isAddHackOpen, setIsAddHackOpen] = useState(false);
+  const [manualHackForm, setManualHackForm] = useState({
+    fullName: "",
+    rollNo: "",
+    branch: "Computer Science & Engineering (CSE)",
+    semester: "5th Semester",
+    email: "",
+    phoneNumber: "",
+    collegeName: "",
+    status: "Confirmed" as HackreadyRegistration["status"],
+    notes: ""
+  });
 
   // Dossier Modal
   const [selectedStudent, setSelectedStudent] = useState<StudentRegistration | null>(null);
@@ -165,6 +193,7 @@ export default function AdminPage() {
     setProblemStatements(getProblemStatements());
     const regs = getStudentRegistrations();
     setRegistrations(regs);
+    setHackreadyList(getHackreadyRegistrations());
     setAnnouncements(getAnnouncements());
     setWebhookUrlInput(getWebhookUrl());
   };
@@ -272,6 +301,94 @@ export default function AdminPage() {
       city: "",
       registeredProgram: "Four-Week Builder Program Cohort 1",
       techInterests: ["Artificial Intelligence & LLMs"],
+      status: "Confirmed",
+      notes: ""
+    });
+  };
+
+  // --- Hackready Actions ---
+  const handleOpenHackDossier = (record: HackreadyRegistration) => {
+    setSelectedHackready(record);
+    setEditHackNotes(record.notes || "");
+  };
+
+  const handleCloseHackDossier = () => {
+    setSelectedHackready(null);
+  };
+
+  const handleHackStatusChange = (id: string, newStatus: HackreadyRegistration["status"]) => {
+    const target = hackreadyList.find((h) => h.id === id);
+    if (!target) return;
+    const updated: HackreadyRegistration = { ...target, status: newStatus };
+    updateHackreadyRegistration(updated);
+    const refreshed = getHackreadyRegistrations();
+    setHackreadyList(refreshed);
+    if (selectedHackready && selectedHackready.id === id) {
+      setSelectedHackready(updated);
+    }
+    showFeedback(`Hackready status updated to "${newStatus}"!`);
+  };
+
+  const handleSaveHackNotes = () => {
+    if (!selectedHackready) return;
+    const updated: HackreadyRegistration = { ...selectedHackready, notes: editHackNotes };
+    updateHackreadyRegistration(updated);
+    setSelectedHackready(updated);
+    setHackreadyList(getHackreadyRegistrations());
+    showFeedback("Hackready internal notes saved successfully!");
+  };
+
+  const handleDeleteHack = (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete the Hackready Workshop record for "${name}"?`)) {
+      deleteHackreadyRegistration(id);
+      setHackreadyList(getHackreadyRegistrations());
+      if (selectedHackready && selectedHackready.id === id) {
+        setSelectedHackready(null);
+      }
+      showFeedback(`Record for ${name} removed.`);
+    }
+  };
+
+  const handleManualAddHack = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !manualHackForm.fullName.trim() ||
+      !manualHackForm.rollNo.trim() ||
+      !manualHackForm.email.trim() ||
+      !manualHackForm.phoneNumber.trim()
+    ) {
+      alert("Please fill in Student Name, Roll No, Gmail, and Phone Number.");
+      return;
+    }
+
+    const newRecord: HackreadyRegistration = {
+      id: `hr-${Date.now()}`,
+      fullName: manualHackForm.fullName.trim(),
+      rollNo: manualHackForm.rollNo.trim(),
+      branch: manualHackForm.branch.trim(),
+      semester: manualHackForm.semester.trim(),
+      email: manualHackForm.email.trim(),
+      phoneNumber: manualHackForm.phoneNumber.trim(),
+      collegeName: manualHackForm.collegeName.trim() || "Engineering College",
+      status: manualHackForm.status,
+      registeredAt: new Date().toISOString().split("T")[0],
+      notes: manualHackForm.notes.trim()
+    };
+
+    const next = [newRecord, ...hackreadyList];
+    saveHackreadyRegistrations(next);
+    setHackreadyList(next);
+    setIsAddHackOpen(false);
+    showFeedback(`Hackready record added for ${newRecord.fullName}!`);
+
+    setManualHackForm({
+      fullName: "",
+      rollNo: "",
+      branch: "Computer Science & Engineering (CSE)",
+      semester: "5th Semester",
+      email: "",
+      phoneNumber: "",
+      collegeName: "",
       status: "Confirmed",
       notes: ""
     });
@@ -448,6 +565,31 @@ export default function AdminPage() {
     return matchesSearch && matchesStatus && matchesProgram;
   });
 
+  // Filter Hackready
+  const filteredHackready = hackreadyList.filter((h) => {
+    const q = hackSearch.toLowerCase();
+    const matchesSearch =
+      !q ||
+      h.fullName.toLowerCase().includes(q) ||
+      h.rollNo.toLowerCase().includes(q) ||
+      h.branch.toLowerCase().includes(q) ||
+      h.semester.toLowerCase().includes(q) ||
+      h.email.toLowerCase().includes(q) ||
+      h.phoneNumber.toLowerCase().includes(q) ||
+      (h.collegeName || "").toLowerCase().includes(q) ||
+      (h.notes || "").toLowerCase().includes(q);
+
+    const matchesStatus = hackStatusFilter === "All" || h.status === hackStatusFilter;
+    const matchesBranch = hackBranchFilter === "All" || h.branch === hackBranchFilter;
+
+    return matchesSearch && matchesStatus && matchesBranch;
+  });
+
+  const totalHackready = hackreadyList.length;
+  const confirmedHackready = hackreadyList.filter((h) => h.status === "Confirmed").length;
+  const uniqueBranches = new Set(hackreadyList.map((h) => h.branch).filter(Boolean)).size;
+  const uniqueSemesters = new Set(hackreadyList.map((h) => h.semester).filter(Boolean)).size;
+
   // Calculate Metrics
   const totalStudents = registrations.length;
   const confirmedStudents = registrations.filter((r) => r.status === "Confirmed").length;
@@ -575,7 +717,8 @@ export default function AdminPage() {
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-200">
         {[
-          { key: "registrations", label: `Student Records & Leads (${registrations.length})`, icon: Users },
+          { key: "registrations", label: `School Registrations (${registrations.length})`, icon: Users },
+          { key: "hackready", label: `⚡ Hackready Workshop (${hackreadyList.length})`, icon: GraduationCap },
           { key: "curriculum", label: "Program & Curriculum", icon: Layers },
           { key: "projects", label: "Projects & Builds", icon: Code },
           { key: "achievements", label: "Achievements", icon: Trophy },
@@ -1012,8 +1155,617 @@ export default function AdminPage() {
       )}
 
       {/* =========================================================
-          STUDENT DOSSIER MODAL
+          TAB: HACKREADY WORKSHOP (COLLEGE & B.TECH REGISTRATIONS)
           ========================================================= */}
+      {activeTab === "hackready" && (
+        <div className="space-y-6">
+          {/* Metrics Overview Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-bold uppercase text-gray-400">Total Workshop Applicants</span>
+              <div className="text-3xl font-black text-[#202124] mt-1">{totalHackready}</div>
+              <span className="text-[10px] text-gray-500 font-medium">B.Tech & College Students</span>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-bold uppercase text-emerald-600">Confirmed Seats</span>
+              <div className="text-3xl font-black text-emerald-600 mt-1">{confirmedHackready}</div>
+              <span className="text-[10px] text-gray-500 font-medium">Ready for Workshop</span>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-bold uppercase text-amber-600">Engineering Branches</span>
+              <div className="text-3xl font-black text-[#202124] mt-1">{uniqueBranches}</div>
+              <span className="text-[10px] text-gray-500 font-medium">CSE, IT, ECE, AI & More</span>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-bold uppercase text-blue-600">Semesters</span>
+              <div className="text-3xl font-black text-[#202124] mt-1">{uniqueSemesters}</div>
+              <span className="text-[10px] text-gray-500 font-medium">1st to 8th Semesters</span>
+            </div>
+          </div>
+
+          {/* Action & Filter Bar */}
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              {/* Search input */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search by Roll No, Name, Branch, Semester, Gmail, Phone..."
+                  value={hackSearch}
+                  onChange={(e) => setHackSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 text-xs focus:outline-none focus:border-[#202124] shadow-2xs"
+                />
+                {hackSearch && (
+                  <button
+                    onClick={() => setHackSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddHackOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-extrabold text-xs transition-all shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Hackready Student</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => exportHackreadyToCSV(filteredHackready)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-colors shadow-sm"
+                  title="Export all Hackready registrations directly into an Excel (.csv) spreadsheet"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Excel (.csv)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter pills */}
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="text-gray-400 font-bold text-[11px] mr-1 uppercase">Status:</span>
+                {["All", "Confirmed", "Pending", "Shortlisted", "Contacted"].map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setHackStatusFilter(st)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                      hackStatusFilter === st
+                        ? "bg-[#202124] text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-400 font-bold text-[11px] uppercase">Branch:</span>
+                <select
+                  value={hackBranchFilter}
+                  onChange={(e) => setHackBranchFilter(e.target.value)}
+                  className="px-2.5 py-1 rounded-xl border border-gray-200 text-xs bg-white font-medium focus:outline-none max-w-xs"
+                >
+                  <option value="All">All Branches</option>
+                  <option value="Computer Science & Engineering (CSE)">CSE</option>
+                  <option value="Information Technology (IT)">IT</option>
+                  <option value="Artificial Intelligence & Machine Learning (AI & ML)">AI & ML</option>
+                  <option value="Data Science / Computer Science & Data">Data Science</option>
+                  <option value="Electronics & Communication Engineering (ECE)">ECE</option>
+                  <option value="Electrical & Electronics Engineering (EEE)">EEE</option>
+                  <option value="Mechanical Engineering (ME)">Mechanical</option>
+                  <option value="Civil Engineering (CE)">Civil</option>
+                  <option value="BCA / MCA / Computer Applications">BCA / MCA</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Hackready Table */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-black text-[#202124] uppercase tracking-wide flex items-center gap-2">
+                  <span>Hackready Workshop Students ({filteredHackready.length})</span>
+                </h3>
+                <p className="text-[11px] text-gray-500">
+                  College students with Roll No., Branch, Semester, Gmail, and WhatsApp contact details.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => exportHackreadyToCSV(filteredHackready)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 text-xs font-bold transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Open in Excel</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={loadAllData}
+                  className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
+                  title="Refresh Table"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {filteredHackready.length === 0 ? (
+              <div className="py-16 text-center space-y-3">
+                <GraduationCap className="w-10 h-10 text-gray-300 mx-auto" />
+                <h4 className="text-sm font-bold text-gray-700">No Hackready registrations found</h4>
+                <p className="text-xs text-gray-400 max-w-sm mx-auto">
+                  {hackSearch || hackStatusFilter !== "All" || hackBranchFilter !== "All"
+                    ? "Try adjusting your search query or filters."
+                    : "No college entries recorded yet. Anyone who registers via the Hackready Workshop form will appear here."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsAddHackOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-[#F6C900] text-[#202124] text-xs font-bold"
+                >
+                  Add a Student Record Manually
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-gray-700">
+                  <thead className="bg-gray-50/80 text-gray-500 uppercase tracking-wider text-[10px] font-bold border-b border-gray-100">
+                    <tr>
+                      <th className="p-3.5">Roll No.</th>
+                      <th className="p-3.5">Student Name</th>
+                      <th className="p-3.5">Branch & Semester</th>
+                      <th className="p-3.5">Gmail / Email</th>
+                      <th className="p-3.5">WhatsApp / Phone</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5">Date</th>
+                      <th className="p-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredHackready.map((hr) => {
+                      const cleanPhone = (hr.phoneNumber || "").replace(/[^\d+]/g, "");
+                      const waLink = `https://wa.me/${cleanPhone.replace("+", "")}?text=${encodeURIComponent(
+                        `Hi ${hr.fullName}, greetings from KRE8ECH! Regarding your Hackready Workshop registration (Roll No: ${hr.rollNo}, ${hr.branch}): welcome aboard!`
+                      )}`;
+
+                      return (
+                        <tr
+                          key={hr.id}
+                          className="hover:bg-amber-50/30 transition-colors group cursor-pointer"
+                          onClick={() => handleOpenHackDossier(hr)}
+                        >
+                          {/* Roll No */}
+                          <td className="p-3.5 font-mono font-bold text-[#202124]">
+                            <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-md border border-gray-200">
+                              {hr.rollNo}
+                            </span>
+                          </td>
+
+                          {/* Student Name */}
+                          <td className="p-3.5 font-bold text-[#202124]">
+                            <div className="text-sm font-extrabold">{hr.fullName}</div>
+                            {hr.notes && (
+                              <div className="text-[10px] text-gray-400 font-normal line-clamp-1 mt-0.5">
+                                {hr.notes}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Branch & Semester */}
+                          <td className="p-3.5 max-w-[200px]">
+                            <div className="font-semibold text-gray-900 text-[11px] line-clamp-1">
+                              {hr.branch}
+                            </div>
+                            <div className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-[#FFF9E8] text-[#202124] border border-[#F6C900]/50">
+                              {hr.semester}
+                            </div>
+                          </td>
+
+                          {/* Gmail / Email */}
+                          <td className="p-3.5" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-1.5 text-gray-700">
+                              <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                              <a
+                                href={`mailto:${hr.email}`}
+                                className="font-medium hover:underline hover:text-black"
+                              >
+                                {hr.email}
+                              </a>
+                            </div>
+                          </td>
+
+                          {/* Phone / WhatsApp */}
+                          <td className="p-3.5" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-800">{hr.phoneNumber}</span>
+                              <div className="flex items-center gap-1">
+                                <a
+                                  href={waLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-colors"
+                                  title="Chat on WhatsApp"
+                                >
+                                  <WhatsAppIcon className="w-3.5 h-3.5" />
+                                </a>
+                                <a
+                                  href={`tel:${hr.phoneNumber}`}
+                                  className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                                  title="Call Student"
+                                >
+                                  <Phone className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Status */}
+                          <td className="p-3.5" onClick={(e) => e.stopPropagation()}>
+                            <select
+                              value={hr.status || "Confirmed"}
+                              onChange={(e) =>
+                                handleHackStatusChange(
+                                  hr.id,
+                                  e.target.value as HackreadyRegistration["status"]
+                                )
+                              }
+                              className={`text-[10px] font-extrabold px-2 py-1 rounded-lg border focus:outline-none transition-colors ${
+                                hr.status === "Confirmed"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                  : hr.status === "Pending"
+                                  ? "bg-amber-50 text-amber-800 border-amber-300"
+                                  : hr.status === "Shortlisted"
+                                  ? "bg-blue-50 text-blue-800 border-blue-300"
+                                  : "bg-purple-50 text-purple-800 border-purple-300"
+                              }`}
+                            >
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Shortlisted">Shortlisted</option>
+                              <option value="Contacted">Contacted</option>
+                            </select>
+                          </td>
+
+                          {/* Date */}
+                          <td className="p-3.5 text-gray-400 text-[11px] whitespace-nowrap">
+                            {hr.registeredAt}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="p-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenHackDossier(hr)}
+                                className="p-1.5 rounded-lg bg-gray-100 hover:bg-[#202124] hover:text-white text-gray-700 transition-colors"
+                                title="View Full Dossier"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteHack(hr.id, hr.fullName)}
+                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                                title="Delete Record"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          HACKREADY DOSSIER MODAL
+          ========================================================= */}
+      {selectedHackready && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">
+            <div className="flex items-start justify-between pb-4 border-b border-gray-100">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                    Roll No: {selectedHackready.rollNo}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    Applied: {selectedHackready.registeredAt}
+                  </span>
+                </div>
+                <h3 className="text-2xl font-black text-[#202124]">
+                  {selectedHackready.fullName}
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCloseHackDossier}
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Contact Bar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href={`https://wa.me/${(selectedHackready.phoneNumber || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(
+                  `Hi ${selectedHackready.fullName}, this is KRE8ECH regarding your Hackready Workshop registration (Roll No: ${selectedHackready.rollNo}, ${selectedHackready.branch}).`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-black shadow-sm transition-all"
+              >
+                <WhatsAppIcon className="w-4 h-4" />
+                <span>Chat on WhatsApp</span>
+              </a>
+
+              <a
+                href={`tel:${selectedHackready.phoneNumber}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5 text-gray-600" />
+                <span>Call {selectedHackready.phoneNumber}</span>
+              </a>
+
+              <a
+                href={`mailto:${selectedHackready.email}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5 text-gray-600" />
+                <span>Send Email</span>
+              </a>
+            </div>
+
+            {/* Full Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-gray-400">Roll Number</span>
+                <div className="font-mono font-bold text-[#202124] text-sm">
+                  {selectedHackready.rollNo}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-gray-400">Branch & Semester</span>
+                <div className="font-bold text-[#202124]">
+                  {selectedHackready.branch} • {selectedHackready.semester}
+                </div>
+              </div>
+            </div>
+
+            {/* Status Selector */}
+            <div className="space-y-2 pt-2 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-gray-500">
+                  Update Enrollment Status:
+                </span>
+                <select
+                  value={selectedHackready.status || "Confirmed"}
+                  onChange={(e) =>
+                    handleHackStatusChange(
+                      selectedHackready.id,
+                      e.target.value as HackreadyRegistration["status"]
+                    )
+                  }
+                  className="px-3 py-1.5 rounded-xl border border-gray-300 font-bold text-xs bg-white focus:outline-none"
+                >
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Pending">Pending Review</option>
+                  <option value="Shortlisted">Shortlisted for Hackathon</option>
+                  <option value="Contacted">Contacted via Phone</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Admin Internal Notes */}
+            <div className="space-y-2 pt-2 border-t border-gray-100">
+              <label className="block text-xs font-bold uppercase text-gray-500">
+                Internal Admin Notes:
+              </label>
+              <textarea
+                rows={3}
+                placeholder="e.g. Attending with team, confirmed project title..."
+                value={editHackNotes}
+                onChange={(e) => setEditHackNotes(e.target.value)}
+                className="w-full p-3 rounded-2xl border border-gray-200 text-xs focus:outline-none focus:border-[#202124]"
+              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSaveHackNotes}
+                  className="px-4 py-2 rounded-xl bg-[#202124] text-white text-xs font-bold hover:bg-black transition-colors"
+                >
+                  Save Internal Notes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          ADD HACKREADY STUDENT MANUALLY MODAL
+          ========================================================= */}
+      {isAddHackOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl relative my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h3 className="text-xl font-black text-[#202124]">Add Hackready Student</h3>
+                <p className="text-xs text-gray-500">Log a college student registration manually.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddHackOpen(false)}
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleManualAddHack} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Aarav Sharma"
+                    value={manualHackForm.fullName}
+                    onChange={(e) => setManualHackForm({ ...manualHackForm, fullName: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#202124]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">Roll No. *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 220101054"
+                    value={manualHackForm.rollNo}
+                    onChange={(e) => setManualHackForm({ ...manualHackForm, rollNo: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 font-mono focus:outline-none focus:border-[#202124]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">Branch *</label>
+                  <select
+                    value={manualHackForm.branch}
+                    onChange={(e) => setManualHackForm({ ...manualHackForm, branch: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white"
+                  >
+                    <option value="Computer Science & Engineering (CSE)">CSE</option>
+                    <option value="Information Technology (IT)">IT</option>
+                    <option value="Artificial Intelligence & Machine Learning (AI & ML)">AI & ML</option>
+                    <option value="Data Science / Computer Science & Data">Data Science</option>
+                    <option value="Electronics & Communication Engineering (ECE)">ECE</option>
+                    <option value="Electrical & Electronics Engineering (EEE)">EEE</option>
+                    <option value="Mechanical Engineering (ME)">Mechanical</option>
+                    <option value="Civil Engineering (CE)">Civil</option>
+                    <option value="BCA / MCA / Computer Applications">BCA / MCA</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">Semester *</label>
+                  <select
+                    value={manualHackForm.semester}
+                    onChange={(e) => setManualHackForm({ ...manualHackForm, semester: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white"
+                  >
+                    <option value="1st Semester">1st Semester</option>
+                    <option value="2nd Semester">2nd Semester</option>
+                    <option value="3rd Semester">3rd Semester</option>
+                    <option value="4th Semester">4th Semester</option>
+                    <option value="5th Semester">5th Semester</option>
+                    <option value="6th Semester">6th Semester</option>
+                    <option value="7th Semester">7th Semester</option>
+                    <option value="8th Semester">8th Semester</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">Gmail / Email *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="student@gmail.com"
+                    value={manualHackForm.email}
+                    onChange={(e) => setManualHackForm({ ...manualHackForm, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#202124]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold uppercase text-gray-600 mb-1">WhatsApp / Phone *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={manualHackForm.phoneNumber}
+                    onChange={(e) => setManualHackForm({ ...manualHackForm, phoneNumber: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#202124]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold uppercase text-gray-600 mb-1">Status</label>
+                <select
+                  value={manualHackForm.status}
+                  onChange={(e) =>
+                    setManualHackForm({
+                      ...manualHackForm,
+                      status: e.target.value as HackreadyRegistration["status"]
+                    })
+                  }
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white"
+                >
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Shortlisted">Shortlisted</option>
+                  <option value="Contacted">Contacted</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold uppercase text-gray-600 mb-1">Internal Notes</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Registered via college flyer / offline campus drive"
+                  value={manualHackForm.notes}
+                  onChange={(e) => setManualHackForm({ ...manualHackForm, notes: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddHackOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-[#F6C900] text-[#202124] font-black hover:bg-[#E5BA00]"
+                >
+                  Save Hackready Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {selectedStudent && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">

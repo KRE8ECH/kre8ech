@@ -135,6 +135,24 @@ export interface StudentRegistration {
   status: "Pending" | "Confirmed" | "Shortlisted" | "Contacted";
   registeredAt: string;
   notes?: string;
+  // Optional college/hackready specific fields if stored together
+  rollNo?: string;
+  branch?: string;
+  semester?: string;
+}
+
+export interface HackreadyRegistration {
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  rollNo: string;
+  branch: string;
+  semester: string;
+  collegeName?: string;
+  registeredAt: string;
+  status: "Pending" | "Confirmed" | "Shortlisted" | "Contacted";
+  notes?: string;
 }
 
 export interface Announcement {

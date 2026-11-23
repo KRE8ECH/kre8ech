@@ -23,7 +23,6 @@ const interestOptions = [
   "Artificial Intelligence & LLMs",
   "Web Development & Frontend",
   "Mobile Apps (Android / iOS)",
-  "Smart IoT & Robotics",
   "UI/UX Design & Prototyping",
   "Automation & Scripts",
   "Competitive Hackathons"
@@ -328,11 +327,21 @@ export default function RegisterPage() {
                 </label>
                 <select
                   value={formData.registeredProgram}
-                  onChange={(e) => setFormData({ ...formData, registeredProgram: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] bg-white shadow-xs"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "HackReady Workshop" || val === "Hackready Workshop") {
+                      router.push("/register/hackready");
+                      return;
+                    }
+                    setFormData({ ...formData, registeredProgram: val });
+                  }}
+                  className="w-full px-3 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] bg-white shadow-xs font-semibold text-gray-800"
                 >
                   <option value="Four-Week Builder Program Cohort 1">
                     Four-Week Builder Program (Cohort 1)
+                  </option>
+                  <option value="HackReady Workshop">
+                    ⚡ Hackready Workshop (College & Branch Registration)
                   </option>
                   <option value="Offline Hackathon Showcase 2026">
                     KRE8ECH Grand Offline Hackathon 2026
@@ -342,6 +351,23 @@ export default function RegisterPage() {
                   </option>
                 </select>
               </div>
+            </div>
+
+            {/* Quick banner for Hackready Workshop */}
+            <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-amber-950 font-bold">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  Registering for <strong>Hackready Workshop</strong> (College & B.Tech)?
+                </span>
+              </div>
+              <Link
+                href="/register/hackready"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-[#202124] hover:bg-black text-[#F6C900] font-black text-xs transition-colors shrink-0 shadow-xs"
+              >
+                <span>Open Hackready Form</span>
+                <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+              </Link>
             </div>
 
             {/* Technology Interests Multi-Select */}

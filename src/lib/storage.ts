@@ -7,6 +7,7 @@ import {
   Hackathon,
   ProblemStatement,
   StudentRegistration,
+  HackreadyRegistration,
   Announcement
 } from "@/types";
 import {
@@ -25,6 +26,7 @@ const KEYS = {
   HACKATHONS: "kre8ech_hackathons",
   PROBLEM_STATEMENTS: "kre8ech_problem_statements",
   REGISTRATIONS: "kre8ech_student_registrations",
+  HACKREADY: "kre8ech_hackready_registrations",
   ANNOUNCEMENTS: "kre8ech_announcements",
   ADMIN_AUTH: "kre8ech_admin_auth",
   STUDENT_USER: "kre8ech_student_user",
@@ -332,6 +334,165 @@ export const exportRegistrationsToCSV = (registrations: StudentRegistration[]): 
   link.setAttribute(
     "download",
     `kre8ech_student_records_${new Date().toISOString().split("T")[0]}.csv`
+  );
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// ==========================================
+// Hackready Workshop Registrations Access
+// ==========================================
+export const getHackreadyRegistrations = (): HackreadyRegistration[] => {
+  const initialHackready: HackreadyRegistration[] = [
+    {
+      id: "hr-1",
+      fullName: "Rohan Verma",
+      email: "rohan.verma@gmail.com",
+      phoneNumber: "+91 98757 21958",
+      rollNo: "220101045",
+      branch: "Computer Science & Engineering (CSE)",
+      semester: "5th Semester",
+      collegeName: "Global Institute of Technology & Management (GITM)",
+      status: "Confirmed",
+      registeredAt: "2026-11-21",
+      notes: "Interested in Full Stack & AI agent development"
+    },
+    {
+      id: "hr-2",
+      fullName: "Priya Nair",
+      email: "priya.nair@gmail.com",
+      phoneNumber: "+91 98112 34567",
+      rollNo: "230102018",
+      branch: "Information Technology (IT)",
+      semester: "3rd Semester",
+      collegeName: "Delhi Technological University (DTU)",
+      status: "Confirmed",
+      registeredAt: "2026-11-22",
+      notes: "Looking to build multi-agent automation"
+    },
+    {
+      id: "hr-3",
+      fullName: "Aman Singh",
+      email: "aman.singh@gmail.com",
+      phoneNumber: "+91 99001 23456",
+      rollNo: "210103092",
+      branch: "Electronics & Communication (ECE)",
+      semester: "7th Semester",
+      collegeName: "Guru Gobind Singh Indraprastha University (GGSIPU)",
+      status: "Shortlisted",
+      registeredAt: "2026-11-23",
+      notes: "Smart IoT & Embedded track participant"
+    }
+  ];
+  return getLocalData<HackreadyRegistration[]>(KEYS.HACKREADY, initialHackready);
+};
+
+export const saveHackreadyRegistrations = (registrations: HackreadyRegistration[]): void => {
+  setLocalData(KEYS.HACKREADY, registrations);
+};
+
+export const updateHackreadyRegistration = (updated: HackreadyRegistration): void => {
+  const current = getHackreadyRegistrations();
+  const next = current.map((r) => (r.id === updated.id ? updated : r));
+  saveHackreadyRegistrations(next);
+};
+
+export const deleteHackreadyRegistration = (id: string): void => {
+  const current = getHackreadyRegistrations();
+  saveHackreadyRegistrations(current.filter((r) => r.id !== id));
+};
+
+export const registerHackreadyStudent = (
+  student: Omit<HackreadyRegistration, "id" | "registeredAt" | "status">
+): HackreadyRegistration => {
+  const current = getHackreadyRegistrations();
+  const today = new Date().toISOString().split("T")[0];
+  const newRecord: HackreadyRegistration = {
+    ...student,
+    id: `hr-${Date.now()}`,
+    registeredAt: today,
+    status: "Confirmed"
+  };
+  setLocalData(KEYS.HACKREADY, [newRecord, ...current]);
+
+  // Also sync into main StudentRegistration list so it shows up in global records
+  try {
+    const mainList = getStudentRegistrations();
+    const syncedStudent: StudentRegistration = {
+      id: newRecord.id,
+      fullName: newRecord.fullName,
+      email: newRecord.email,
+      phoneNumber: newRecord.phoneNumber,
+      schoolCollege: newRecord.collegeName || "College",
+      classYear: `${newRecord.branch} (${newRecord.semester})`,
+      city: "College Campus",
+      techInterests: ["Hackathon Preparation", "Prototype Building"],
+      registeredProgram: "Hackready Workshop",
+      status: "Confirmed",
+      registeredAt: today,
+      notes: `Roll No: ${newRecord.rollNo} | Branch: ${newRecord.branch} | Sem: ${newRecord.semester}`
+    };
+    saveStudentRegistrations([syncedStudent, ...mainList.filter((s) => s.id !== newRecord.id)]);
+  } catch (e) {
+    // fallback
+  }
+
+  // Webhook trigger if configured
+  const webhookUrl = getWebhookUrl();
+  if (webhookUrl && typeof window !== "undefined") {
+    try {
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...newRecord, program: "Hackready Workshop" }),
+        mode: "no-cors"
+      }).catch((e) => console.log("Webhook ping sent:", e));
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  return newRecord;
+};
+
+// Export Hackready to CSV (compatible with Excel via BOM)
+export const exportHackreadyToCSV = (registrations: HackreadyRegistration[]): void => {
+  const headers = [
+    "Roll No",
+    "Student Name",
+    "Branch",
+    "Semester",
+    "Gmail / Email",
+    "Phone Number",
+    "Status",
+    "Registration Date",
+    "Notes"
+  ];
+
+  const rows = registrations.map((r) => [
+    `"${(r.rollNo || "").replace(/"/g, '""')}"`,
+    `"${(r.fullName || "").replace(/"/g, '""')}"`,
+    `"${(r.branch || "").replace(/"/g, '""')}"`,
+    `"${(r.semester || "").replace(/"/g, '""')}"`,
+    `"${(r.email || "").replace(/"/g, '""')}"`,
+    `"${(r.phoneNumber || "").replace(/"/g, '""')}"`,
+    r.status || "Confirmed",
+    r.registeredAt || "",
+    `"${(r.notes || "").replace(/"/g, '""')}"`
+  ]);
+
+  // \uFEFF Byte Order Mark ensures Microsoft Excel opens UTF-8 encoded text properly
+  const csvContent =
+    "data:text/csv;charset=utf-8,\uFEFF" +
+    [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute(
+    "download",
+    `kre8ech_hackready_workshop_students_${new Date().toISOString().split("T")[0]}.csv`
   );
   document.body.appendChild(link);
   link.click();
