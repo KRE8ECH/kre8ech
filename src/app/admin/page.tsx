@@ -1669,8 +1669,6 @@ export default function AdminPage() {
                     <option value="Electronics & Communication Engineering (ECE)">ECE</option>
                     <option value="Bachelor of Computer Applications (BCA)">BCA</option>
                     <option value="Bachelor of Business Administration (BBA)">BBA</option>
-                    <option value="Information Technology (IT)">IT</option>
-                    <option value="Other Tech / Degree Branch">Other</option>
                   </select>
                 </div>
                 <div>

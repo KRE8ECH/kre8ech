@@ -27,9 +27,7 @@ const branchOptions = [
   "Artificial Intelligence & Data Science (AI & DS)",
   "Electronics & Communication Engineering (ECE)",
   "Bachelor of Computer Applications (BCA)",
-  "Bachelor of Business Administration (BBA)",
-  "Information Technology (IT)",
-  "Other Tech / Degree Branch"
+  "Bachelor of Business Administration (BBA)"
 ];
 
 const semesterOptions = [
