@@ -13,13 +13,8 @@ export default function Footer() {
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="inline-block group focus:outline-none" title="KRE8ECH — Learn • Build • Innovate">
               <div className="flex items-center gap-2.5 sm:gap-3">
-                <Image
-                  src="/images/kre8ech-wings.png"
-                  alt="KRE8ECH"
-                  width={54}
-                  height={32}
-                  className="h-11 sm:h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
-                />
+               
+                
                 <div className="flex flex-col justify-center leading-none select-none">
                   <span className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center font-sans">
                     KRE<span className="text-[#F6C900] text-[26px] sm:text-[32px] font-black mx-0.5 -translate-y-0.5">8</span>ECH

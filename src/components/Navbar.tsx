@@ -55,14 +55,7 @@ export default function Navbar() {
             className="flex items-center gap-2.5 sm:gap-3 group focus:outline-none shrink-0"
             title="KRE8ECH — Learn • Build • Innovate"
           >
-            <Image
-              src="/images/kre8ech-wings.png"
-              alt="KRE8ECH Wings Logo"
-              width={54}
-              height={32}
-              className="h-10 sm:h-11 md:h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
-              priority
-            />
+            
             <div className="flex flex-col justify-center leading-none select-none">
               <span className="text-2xl sm:text-[27px] md:text-[29px] font-black tracking-tight text-[#202124] flex items-center font-sans">
                 KRE<span className="text-[#F6C900] text-[26px] sm:text-[30px] md:text-[32px] font-black mx-0.5 -translate-y-0.5">8</span>ECH
@@ -132,8 +125,8 @@ export default function Navbar() {
               href="/register"
               className="inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold px-5 py-2.5 rounded-full bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] shadow-sm hover:shadow transition-all"
             >
-              <span>Join KRE8ECH</span>
-              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span> Join KRE8ECH</span>
+              <ArrowRight className="w-6.5 h-6.5 stroke-[4.5]" />
             </Link>
           </div>
 
@@ -206,7 +199,7 @@ export default function Navbar() {
               className="flex items-center justify-center gap-2 w-full py-3 rounded-full text-xs font-extrabold bg-[#F6C900] text-[#202124] shadow-sm"
             >
               <span>Join KRE8ECH</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-6.5 h-6.5 stroke-[4.5]" />
             </Link>
 
             <Link
