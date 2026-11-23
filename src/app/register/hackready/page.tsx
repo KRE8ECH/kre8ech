@@ -10,7 +10,6 @@ import {
   Phone,
   GraduationCap,
   Hash,
-  Layers,
   ArrowRight,
   CheckCircle2,
   Download,
@@ -317,12 +316,11 @@ export default function HackreadyRegisterPage() {
                 <label className="block text-xs font-bold uppercase text-gray-600 mb-1.5">
                   Semester *
                 </label>
-                <div className="relative">
-                  <Layers className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <div>
                   <select
                     value={formData.semester}
                     onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] bg-white shadow-xs font-semibold"
+                    className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] bg-white shadow-xs font-semibold"
                   >
                     {semesterOptions.map((s) => (
                       <option key={s} value={s}>
