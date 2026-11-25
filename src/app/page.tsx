@@ -25,7 +25,6 @@ import {
   Award
 } from "lucide-react";
 import {
-  LaptopSticker,
   RocketSticker,
   LightbulbSticker,
   RobotSticker,
@@ -56,6 +55,10 @@ import {
   AnimatedRobot
 } from "@/components/hero/HeroInteractiveStickers";
 import { LaunchableHeroRocket } from "@/components/hero/LaunchableHeroRocket";
+import {
+  InteractiveHeroCodingBox,
+  CODING_BOX_RUNS
+} from "@/components/hero/InteractiveHeroCodingBox";
 
 const HeroThreeBackdrop = dynamic(
   () => import("@/components/three/HeroThreeBackdrop"),
@@ -136,6 +139,31 @@ export default function HomePage() {
     setRocketLaunched(false);
   }, []);
 
+  const [codingBoxActive, setCodingBoxActive] = useState(false);
+  const [codingRunIndex, setCodingRunIndex] = useState(0);
+  const codingTerminalTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (codingTerminalTimerRef.current) {
+        window.clearTimeout(codingTerminalTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleRunCodingBox = () => {
+    const nextIdx = codingBoxActive ? (codingRunIndex + 1) % CODING_BOX_RUNS.length : codingRunIndex;
+    setCodingRunIndex(nextIdx);
+    setCodingBoxActive(true);
+    setActiveStickerHint(null);
+    if (codingTerminalTimerRef.current) {
+      window.clearTimeout(codingTerminalTimerRef.current);
+    }
+    codingTerminalTimerRef.current = window.setTimeout(() => {
+      setCodingBoxActive(false);
+    }, 5200);
+  };
+
   useEffect(() => {
     setProgram(getProgramData());
     setProjects(getProjects().slice(0, 3));
@@ -176,15 +204,15 @@ export default function HomePage() {
         />
 
         {/* Decorative Floating Tech Stickers (Interactive on click!) */}
-        {/* 1. TOP-LEFT: Laptop Sticker */}
-        <button
-          type="button"
-          onClick={() => setActiveStickerHint("Build & deploy functional software in guided coding sprints")}
-          className="hidden lg:block absolute top-12 xl:top-14 left-8 xl:left-20 z-10 animate-float-slow focus:outline-none"
-          title="Click for builder insight"
-        >
-          <LaptopSticker size={84} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-[0_8px_20px_rgba(0,0,0,0.06)]" />
-        </button>
+        {/* 1. TOP-LEFT: Interactive Coding Box / Laptop */}
+        <div className="hidden lg:block absolute top-12 xl:top-14 left-8 xl:left-20 z-10 animate-float-slow">
+          <InteractiveHeroCodingBox
+            size={84}
+            isActive={codingBoxActive}
+            runIndex={codingRunIndex}
+            onTrigger={handleRunCodingBox}
+          />
+        </div>
 
         {/* 2. TOP-RIGHT: Rocket Sticker (Clicks launch the toy rocket at exact 84px size!) */}
         <button
@@ -243,6 +271,26 @@ export default function HomePage() {
             <span>From curious minds to creative builders</span>
             <SparkleSticker size={14} />
           </div>
+
+          {codingBoxActive && (
+            <div className="mb-4 flex justify-center animate-in fade-in duration-200">
+              <div className="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 px-4 py-1.5 rounded-2xl sm:rounded-full bg-[#121316] border border-[#F6C900]/70 text-xs font-mono text-white shadow-md max-w-full">
+                <span className="text-[#F6C900] font-black">$ {CODING_BOX_RUNS[codingRunIndex].cmd}</span>
+                <span className="text-gray-400">→</span>
+                <span className="text-emerald-300 font-semibold font-sans">
+                  {CODING_BOX_RUNS[codingRunIndex].output}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCodingBoxActive(false)}
+                  className="text-gray-400 hover:text-white ml-1 text-[11px] font-black"
+                  aria-label="Dismiss terminal output"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
 
           {activeStickerHint && (
             <div className="mb-4 flex justify-center animate-in fade-in duration-200">
@@ -312,13 +360,14 @@ export default function HomePage() {
 
           {/* Mobile view of interactive tech stickers */}
           <div className="lg:hidden flex items-center justify-center gap-6 sm:gap-8 mb-6">
-            <button
-              type="button"
-              onClick={() => setActiveStickerHint("Build & deploy functional software in guided coding sprints")}
-              className="animate-float-slow focus:outline-none"
-            >
-              <LaptopSticker size={52} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-sm" />
-            </button>
+            <div className="animate-float-slow">
+              <InteractiveHeroCodingBox
+                size={52}
+                isActive={codingBoxActive}
+                runIndex={codingRunIndex}
+                onTrigger={handleRunCodingBox}
+              />
+            </div>
             <button
               type="button"
               onClick={() => setActiveStickerHint("Turn everyday student challenges into prototype ideas")}

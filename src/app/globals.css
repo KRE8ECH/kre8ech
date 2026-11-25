@@ -87,11 +87,40 @@
   animation-play-state: paused;
 }
 
+@keyframes codeTokenFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.85);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-28px) scale(1);
+  }
+}
+
+.animate-code-token-1 {
+  animation: codeTokenFloat 1.3s ease-out infinite;
+}
+
+.animate-code-token-2 {
+  animation: codeTokenFloat 1.45s ease-out 0.25s infinite;
+}
+
+.animate-code-token-3 {
+  animation: codeTokenFloat 1.15s ease-out 0.45s infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-float-gentle,
   .animate-float-slow,
   .animate-float-reverse,
-  .animate-marquee {
+  .animate-marquee,
+  .animate-code-token-1,
+  .animate-code-token-2,
+  .animate-code-token-3 {
     animation: none;
   }
 }
