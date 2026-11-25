@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -55,6 +55,7 @@ import {
   AnimatedRocket,
   AnimatedRobot
 } from "@/components/hero/HeroInteractiveStickers";
+import { LaunchableHeroRocket } from "@/components/hero/LaunchableHeroRocket";
 
 const HeroThreeBackdrop = dynamic(
   () => import("@/components/three/HeroThreeBackdrop"),
@@ -118,6 +119,23 @@ export default function HomePage() {
   const [activeProgramWeek, setActiveProgramWeek] = useState<number>(1);
   const [showHeroPlayground, setShowHeroPlayground] = useState<boolean>(false);
 
+  const heroSectionRef = useRef<HTMLElement>(null);
+  const desktopRocketRef = useRef<HTMLButtonElement>(null);
+  const mobileRocketRef = useRef<HTMLButtonElement>(null);
+  const [rocketLaunched, setRocketLaunched] = useState(false);
+  const [rocketLaunchTick, setRocketLaunchTick] = useState(0);
+  const [rocketFlightSize, setRocketFlightSize] = useState(84);
+
+  const handleLaunchRocket = (size: number) => {
+    setRocketFlightSize(size);
+    setRocketLaunched(true);
+    setRocketLaunchTick((n) => n + 1);
+  };
+
+  const handleLandRocket = useCallback(() => {
+    setRocketLaunched(false);
+  }, []);
+
   useEffect(() => {
     setProgram(getProgramData());
     setProjects(getProjects().slice(0, 3));
@@ -136,11 +154,26 @@ export default function HomePage() {
       {/* =========================================================
           SECTION 1 — HERO
           ========================================================= */}
-      <section className="relative pt-8 sm:pt-14 pb-12 sm:pb-16 bg-gradient-to-b from-[#FFFDF9] via-white to-white overflow-hidden">
+      <section
+        ref={heroSectionRef}
+        className="relative pt-8 sm:pt-14 pb-12 sm:pb-16 bg-gradient-to-b from-[#FFFDF9] via-white to-white overflow-hidden"
+      >
         {/* Crisp architectural background grid + Three.js ambient 3D depth + soft radial aura */}
         <div className="absolute inset-0 bg-subtle-grid pointer-events-none z-0" />
         <HeroThreeBackdrop />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-[#FFF3C4]/45 via-[#FFF9E8]/20 to-transparent blur-3xl pointer-events-none z-0" />
+
+        {/* Launched toy rocket flying around Hero at exact fixed size */}
+        <LaunchableHeroRocket
+          heroRef={heroSectionRef}
+          desktopButtonRef={desktopRocketRef}
+          mobileButtonRef={mobileRocketRef}
+          launchTrigger={rocketLaunchTick}
+          flightSize={rocketFlightSize}
+          isLaunched={rocketLaunched}
+          onLand={handleLandRocket}
+          onMidFlightBoost={() => setRocketLaunchTick((n) => n + 1)}
+        />
 
         {/* Decorative Floating Tech Stickers (Interactive on click!) */}
         {/* 1. TOP-LEFT: Laptop Sticker */}
@@ -153,14 +186,18 @@ export default function HomePage() {
           <LaptopSticker size={84} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-[0_8px_20px_rgba(0,0,0,0.06)]" />
         </button>
 
-        {/* 2. TOP-RIGHT: Rocket Sticker */}
+        {/* 2. TOP-RIGHT: Rocket Sticker (Clicks launch the toy rocket at exact 84px size!) */}
         <button
+          ref={desktopRocketRef}
           type="button"
-          onClick={() => setActiveStickerHint("Ship your working MVP in 4 weeks and pitch live")}
-          className="hidden lg:block absolute top-14 xl:top-16 right-8 xl:right-20 z-10 animate-float-reverse focus:outline-none"
-          title="Click for launch insight"
+          onClick={() => handleLaunchRocket(84)}
+          className={`hidden lg:block absolute top-14 xl:top-16 right-8 xl:right-20 z-10 animate-float-reverse focus:outline-none ${
+            rocketLaunched ? "opacity-0 pointer-events-none" : ""
+          }`}
+          title="Click to launch rocket!"
+          aria-label="Launch toy rocket"
         >
-          <RocketSticker size={84} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-[0_8px_20px_rgba(246,201,0,0.22)]" />
+          <RocketSticker size={84} className="cursor-pointer drop-shadow-[0_8px_20px_rgba(246,201,0,0.22)]" />
         </button>
 
         {/* 3. BOTTOM-LEFT: Lightbulb Sticker */}
@@ -290,11 +327,16 @@ export default function HomePage() {
               <LightbulbSticker size={46} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-sm" />
             </button>
             <button
+              ref={mobileRocketRef}
               type="button"
-              onClick={() => setActiveStickerHint("Ship your working MVP in 4 weeks and pitch live")}
-              className="animate-float-slow focus:outline-none"
+              onClick={() => handleLaunchRocket(52)}
+              className={`animate-float-slow focus:outline-none ${
+                rocketLaunched ? "opacity-0 pointer-events-none" : ""
+              }`}
+              title="Click to launch rocket!"
+              aria-label="Launch toy rocket"
             >
-              <RocketSticker size={52} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-sm" />
+              <RocketSticker size={52} className="cursor-pointer drop-shadow-sm" />
             </button>
             <button
               type="button"
