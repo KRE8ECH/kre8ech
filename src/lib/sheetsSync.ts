@@ -11,8 +11,12 @@ export interface SheetsSyncResult {
   error?: string;
 }
 
+export const DEFAULT_SHEETS_WEBHOOK_URL =
+  "https://script.google.com/macros/s/AKfycbwaFgHoNmcPuRm_sb_340TS788ekebVwLKeu_JTS7f1LxaoBIRyeNt-th-PLGogc2WFGg/exec";
+
 const ENV_SHEETS_WEBHOOK_URL = (
-  process.env.NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL ?? ""
+  process.env.NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL ||
+  DEFAULT_SHEETS_WEBHOOK_URL
 ).trim();
 
 const SYNC_TIMEOUT_MS = 6000;
@@ -28,8 +32,8 @@ function isValidHttpUrl(value: string): boolean {
 
 /**
  * Resolves the active Google Sheets / webhook endpoint.
- * Prefers the build-time global NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL so all
- * visitors sync to the owner's sheet, falling back to admin localStorage.
+ * Prefers the global configured endpoint (NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL
+ * or built-in DEFAULT_SHEETS_WEBHOOK_URL), with browser localStorage fallback.
  */
 export function getActiveSheetsEndpoint(): {
   url: string;

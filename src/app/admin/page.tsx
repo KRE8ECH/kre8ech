@@ -213,7 +213,7 @@ export default function AdminPage() {
     setRegistrations(regs);
     setHackreadyList(getHackreadyRegistrations());
     setAnnouncements(getAnnouncements());
-    setWebhookUrlInput(getWebhookUrl());
+    setWebhookUrlInput(getWebhookUrl() || getActiveSheetsEndpoint().url);
   };
 
   const showFeedback = (msg: string) => {
