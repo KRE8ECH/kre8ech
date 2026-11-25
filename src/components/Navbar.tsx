@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight, UserCheck, ShieldCheck } from "lucide-react";
-import { getStudentSession, isAdminAuthenticated } from "@/lib/storage";
+import { Menu, X, ArrowRight, UserCheck } from "lucide-react";
+import { getStudentSession } from "@/lib/storage";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -22,7 +22,6 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isStudentLoggedIn, setIsStudentLoggedIn] = useState(false);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -34,7 +33,6 @@ export default function Navbar() {
     // Check login state
     const student = getStudentSession();
     setIsStudentLoggedIn(!!student);
-    setIsAdminLoggedIn(isAdminAuthenticated());
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
@@ -88,20 +86,6 @@ export default function Navbar() {
 
           {/* CTA & Actions */}
           <div className="hidden md:flex items-center gap-4">
-            {/* Admin Portal access */}
-            <Link
-              href="/admin"
-              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full transition-colors ${
-                isAdminLoggedIn
-                  ? "bg-gray-900 text-yellow-400 hover:bg-black"
-                  : "text-gray-400 hover:text-[#202124] hover:bg-gray-100"
-              }`}
-              title="Admin Records Portal"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Admin</span>
-            </Link>
-
             {/* Student Account */}
             {isStudentLoggedIn ? (
               <Link
@@ -200,15 +184,6 @@ export default function Navbar() {
             >
               <span>Join KRE8ECH</span>
               <ArrowRight className="w-6.5 h-6.5 stroke-[4.5]" />
-            </Link>
-
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-semibold text-gray-500 hover:text-black"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Admin Records Portal</span>
             </Link>
           </div>
         </div>

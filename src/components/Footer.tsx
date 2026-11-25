@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight, Heart, Sparkles, Shield, Mail, Phone } from "lucide-react";
+import { ArrowUpRight, Heart, Sparkles, Mail, Phone } from "lucide-react";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 
 export default function Footer() {
@@ -155,12 +155,6 @@ export default function Footer() {
               <li>
                 <Link href="/login" className="hover:text-[#F6C900] transition-colors">
                   Student Portal Login
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="hover:text-[#F6C900] transition-colors flex items-center gap-1.5 text-gray-400">
-                  <Shield className="w-3.5 h-3.5 text-[#F6C900]" />
-                  <span>Admin Records Portal</span>
                 </Link>
               </li>
             </ul>

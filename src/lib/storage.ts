@@ -279,18 +279,27 @@ export const setStudentSession = (session: StudentSession | null): void => {
   setLocalData(KEYS.STUDENT_USER, session);
 };
 
-// Admin Auth State
+// Admin Auth State (session-scoped so closing the tab locks access)
 export const isAdminAuthenticated = (): boolean => {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem(KEYS.ADMIN_AUTH) === "true";
+  try {
+    return sessionStorage.getItem(KEYS.ADMIN_AUTH) === "true";
+  } catch {
+    return false;
+  }
 };
 
 export const setAdminAuthenticated = (isAuth: boolean): void => {
   if (typeof window === "undefined") return;
-  if (isAuth) {
-    localStorage.setItem(KEYS.ADMIN_AUTH, "true");
-  } else {
+  try {
+    if (isAuth) {
+      sessionStorage.setItem(KEYS.ADMIN_AUTH, "true");
+    } else {
+      sessionStorage.removeItem(KEYS.ADMIN_AUTH);
+    }
     localStorage.removeItem(KEYS.ADMIN_AUTH);
+  } catch {
+    // ignore storage errors
   }
 };
 

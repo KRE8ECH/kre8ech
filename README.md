@@ -31,7 +31,6 @@ A premium, modern, fully responsive web application built with **Next.js (App Ro
 | `/register` | **Student Onboarding**: Real form validation capturing name, email, school, class level, city, and technology interests. Automatically creates an active student session. |
 | `/login` | **Student Login**: Instant access to the Student Portal with one-click demo credentials. |
 | `/dashboard` | **Student Portal Dashboard**: Displays personalized student profile, weekly curriculum progress, cohort announcements, problem statements, and hackathon participation status. |
-| `/admin` | **Protected Admin Control Center (CMS)**: Passcode-protected (`kre8ech2026`). Live content management for Curriculum daily topics, Projects, Achievements, Hackathons, Problem Statements, Announcements, and **Student Registrations with CSV Export**. |
 | `/about` | **About KRE8ECH**: Company genesis, mission, core values, and school partnership programs. |
 | `/contact` | **Contact & School Collaboration**: Multi-category enquiry form for students, schools, and mentors. |
 
@@ -60,7 +59,3 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 npm run build
 npm run start
 ```
-
-### Admin Access
-- Navigate to `/admin`
-- Enter default team passcode: `kre8ech2026`

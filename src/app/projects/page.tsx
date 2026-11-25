@@ -196,7 +196,7 @@ export default function ProjectsPage() {
             <CodeTagSticker size={56} className="mx-auto" />
             <h3 className="text-base font-bold text-[#202124]">No projects found</h3>
             <p className="text-xs sm:text-sm text-gray-500">
-              Try choosing a different category or adjusting your search term. You can also publish new student projects directly from the Admin Panel.
+              Try choosing a different category or adjusting your search term.
             </p>
             <div className="pt-2">
               <button

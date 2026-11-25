@@ -70,7 +70,7 @@ export default function BuilderProgramPage() {
     },
     {
       q: "Can students update or see daily topics as they evolve?",
-      a: "Yes! While the core weekly roadmap and learning objectives are established, individual daily topics can be dynamically refined by the KRE8ECH mentor team via our Admin Content Management system to keep pace with the latest tech breakthroughs."
+      a: "Yes! While the core weekly roadmap and learning objectives are established, individual daily topics are periodically refined by the KRE8ECH mentor team to keep pace with the latest tech breakthroughs."
     },
     {
       q: "What will students build by the end of the 4 weeks?",
@@ -372,7 +372,7 @@ export default function BuilderProgramPage() {
                 Daily Session Breakdown ({selectedWeek.days.length} Days)
               </h4>
               <span className="text-[11px] text-gray-400 italic">
-                *Daily topics dynamically manageable via KRE8ECH Admin
+                *Daily topics are refined per cohort by KRE8ECH mentors
               </span>
             </div>
 

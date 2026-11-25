@@ -96,6 +96,19 @@ type AdminTab =
   | "problemStatements"
   | "announcements";
 
+const EXPECTED_PASSCODE_HASH = (
+  process.env.NEXT_PUBLIC_ADMIN_PASSCODE_HASH ||
+  "08c6a861da44b39b86f41fa39fb33dc83fe6c741b19bc0789ed68a9bb44cd5ab"
+).toLowerCase();
+
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 const availableInterestOptions = [
   "Artificial Intelligence & LLMs",
   "Web Development & Frontend",
@@ -203,15 +216,21 @@ export default function AdminPage() {
     setTimeout(() => setFeedback(null), 3500);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === "kre8ech2026" || passcode === "admin123" || passcode === "kre8ech") {
-      setAdminAuthenticated(true);
-      setIsAuthenticated(true);
-      setLoginError("");
-      loadAllData();
-    } else {
-      setLoginError("Invalid passcode. Hint: Use 'kre8ech2026'");
+    setLoginError("");
+    try {
+      const enteredHash = await sha256Hex(passcode.trim());
+      if (enteredHash === EXPECTED_PASSCODE_HASH) {
+        setAdminAuthenticated(true);
+        setIsAuthenticated(true);
+        setPasscode("");
+        loadAllData();
+      } else {
+        setLoginError("Invalid passcode.");
+      }
+    } catch {
+      setLoginError("Unable to verify passcode in this browser.");
     }
   };
 
@@ -631,7 +650,8 @@ export default function AdminPage() {
               <input
                 type="password"
                 required
-                placeholder="Enter passcode (e.g. kre8ech2026)"
+                autoComplete="current-password"
+                placeholder="Enter admin passcode"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124]"
@@ -646,23 +666,6 @@ export default function AdminPage() {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          <div className="pt-2 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setPasscode("kre8ech2026");
-                setAdminAuthenticated(true);
-                setIsAuthenticated(true);
-                setLoginError("");
-                loadAllData();
-              }}
-              className="text-xs text-[#202124] bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-3.5 py-1.5 rounded-full font-bold transition-colors inline-flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>Click for Instant Access (Passcode: kre8ech2026)</span>
-            </button>
-          </div>
         </div>
       </div>
     );
