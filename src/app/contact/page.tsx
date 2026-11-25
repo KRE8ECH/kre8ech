@@ -1,19 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Mail,
-  Building,
-  User,
-  MessageSquare,
-  CheckCircle2,
-  ArrowRight,
-  Sparkles,
-  MapPin,
-  Clock,
-  Phone
-} from "lucide-react";
+import { Mail, CheckCircle2, ArrowRight, MapPin, Clock, Phone } from "lucide-react";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
+import { syncToGoogleSheet } from "@/lib/sheetsSync";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -21,48 +11,55 @@ export default function ContactPage() {
     email: "",
     type: "student",
     schoolName: "",
-    message: ""
+    message: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsSubmitting(true);
+    try {
+      await syncToGoogleSheet("Contact Enquiries", {
+        id: `enq-${Date.now()}`,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        enquiryType: formData.type,
+        schoolName: formData.schoolName.trim(),
+        message: formData.message.trim(),
+      });
+      setSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="pb-24 space-y-16">
-      {/* Header */}
-      <section className="bg-gradient-to-b from-[#FFFDF9] via-white to-white py-14 border-b border-gray-100">
+    <div className="pb-20 space-y-14">
+      <section className="bg-gradient-to-b from-[#FAF8F2] to-white py-12 border-b border-black/[0.06]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl space-y-4">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200/50 text-xs font-bold uppercase tracking-wider">
-              <Mail className="w-3.5 h-3.5 text-amber-600" />
-              <span>Get in Touch</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-black text-[#202124] tracking-tight">
-              Contact & School Collaboration
+          <div className="max-w-2xl space-y-3">
+            <span className="text-xs font-medium text-[#6B7280]">Get in Touch</span>
+            <h1 className="text-4xl sm:text-5xl font-semibold text-[#202124] tracking-tight">
+              Contact &amp; School Collaboration
             </h1>
-            <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
-              Have questions about the Four-Week Builder Program? Want to organize a student hackathon at your school? We&apos;d love to connect with you.
+            <p className="text-[#525252] text-base sm:text-lg leading-relaxed">
+              Have questions about the Four-Week Builder Program or want to host a student hackathon at your school? Connect with our coordinator team.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Main Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Form */}
-          <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
+          <div className="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-8 border border-black/[0.08]">
             {submitted ? (
-              <div className="text-center py-12 space-y-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 mx-auto flex items-center justify-center text-emerald-600">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-black text-[#202124]">Enquiry Received!</h3>
-                <p className="text-sm text-gray-600 max-w-sm mx-auto">
-                  Thank you for reaching out, <strong>{formData.name}</strong>. A KRE8ECH program coordinator will follow up with you within 24 hours.
+              <div className="text-center py-10 space-y-4">
+                <CheckCircle2 className="w-10 h-10 text-[#16A34A] mx-auto" strokeWidth={1.75} />
+                <h2 className="text-2xl font-semibold text-[#202124]">Enquiry Received</h2>
+                <p className="text-sm text-[#525252] max-w-sm mx-auto">
+                  Thank you for reaching out, <strong className="text-[#202124]">{formData.name}</strong>. Our team will follow up within 24 hours.
                 </p>
                 <button
                   type="button"
@@ -70,7 +67,7 @@ export default function ContactPage() {
                     setSubmitted(false);
                     setFormData({ name: "", email: "", type: "student", schoolName: "", message: "" });
                   }}
-                  className="px-5 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-800 transition-colors"
+                  className="px-5 py-2 rounded-lg bg-[#FAF8F2] hover:bg-[#EFE9DF] border border-black/[0.08] text-xs font-medium text-[#202124] transition-colors"
                 >
                   Send Another Message
                 </button>
@@ -78,14 +75,13 @@ export default function ContactPage() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <h3 className="text-xl font-black text-[#202124] mb-1">Send an Enquiry</h3>
-                  <p className="text-xs text-gray-400">Fill out the details below and we&apos;ll be in touch.</p>
+                  <h2 className="text-xl font-semibold text-[#202124]">Send an Enquiry</h2>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Fill out the details below and we will reply shortly.</p>
                 </div>
 
-                {/* Enquiry Type Selector */}
                 <div>
-                  <label className="block text-xs font-bold uppercase text-gray-500 mb-2">
-                    I am getting in touch as a:
+                  <label className="block text-xs font-medium text-[#525252] mb-2">
+                    I am getting in touch as a
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
@@ -97,10 +93,10 @@ export default function ContactPage() {
                         key={t.key}
                         type="button"
                         onClick={() => setFormData({ ...formData, type: t.key })}
-                        className={`py-2 rounded-2xl text-xs font-semibold border transition-all ${
+                        className={`py-2 rounded-lg text-xs font-medium border transition-colors ${
                           formData.type === t.key
-                            ? "bg-amber-50 text-amber-950 font-bold border-amber-300 shadow-xs"
-                            : "bg-white border-gray-200/80 text-gray-600 hover:border-gray-300"
+                            ? "bg-[#202124] text-white border-[#202124]"
+                            : "bg-white border-black/[0.1] text-[#525252] hover:bg-[#FAF8F2]"
                         }`}
                       >
                         {t.label}
@@ -111,7 +107,7 @@ export default function ContactPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
+                    <label className="block text-xs font-medium text-[#525252] mb-1">
                       Your Name *
                     </label>
                     <input
@@ -120,12 +116,12 @@ export default function ContactPage() {
                       placeholder="e.g. Priyanshu Sharma"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#202124] shadow-xs"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
+                    <label className="block text-xs font-medium text-[#525252] mb-1">
                       Email Address *
                     </label>
                     <input
@@ -134,13 +130,13 @@ export default function ContactPage() {
                       placeholder="e.g. priyanshu@example.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#202124] shadow-xs"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
+                  <label className="block text-xs font-medium text-[#525252] mb-1">
                     School / College / Organization Name
                   </label>
                   <input
@@ -148,116 +144,91 @@ export default function ContactPage() {
                     placeholder="e.g. Modern School, Barakhamba Road"
                     value={formData.schoolName}
                     onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#202124] shadow-xs"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
-                    Your Message / Specific Question *
+                  <label className="block text-xs font-medium text-[#525252] mb-1">
+                    Message / Specific Question *
                   </label>
                   <textarea
                     required
                     rows={4}
-                    placeholder="Tell us what you'd like to explore, cohort queries, or collaboration details..."
+                    placeholder="Share cohort queries or school collaboration details"
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs sm:text-sm focus:outline-none focus:border-[#202124] shadow-xs"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124]"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-black text-xs sm:text-sm shadow-xs transition-all"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-semibold text-sm transition-colors disabled:opacity-50"
                 >
-                  <span>Submit Enquiry</span>
-                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  <span>{isSubmitting ? "Sending..." : "Submit Enquiry"}</span>
+                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
                 </button>
               </form>
             )}
           </div>
 
-          {/* Details */}
+          {/* Info Column */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-[#FFFDF7] rounded-3xl p-6 sm:p-8 border border-amber-200/60 shadow-xs space-y-4">
-              <span className="text-[11px] font-bold uppercase text-amber-900 bg-amber-50 px-3 py-1 rounded-full border border-amber-200/50 inline-block">
-                For Schools & Institutions
-              </span>
-              <h3 className="text-xl font-black text-[#202124]">
-                Bring KRE8ECH to Your Campus
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
-                We partner with school leadership, computer science faculty, and student innovation clubs to conduct:
+            <div className="bg-[#FAF8F2] rounded-2xl p-6 border border-black/[0.08] space-y-3">
+              <span className="text-xs font-medium text-[#6B7280]">For Schools &amp; Institutions</span>
+              <h3 className="text-lg font-semibold text-[#202124]">Bring KRE8ECH to Your Campus</h3>
+              <p className="text-sm text-[#525252] leading-relaxed">
+                We partner with school leadership, computer science faculty, and innovation clubs to run:
               </p>
-              <ul className="space-y-2 text-xs font-semibold text-gray-800">
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#202124]" />
-                  In-school hackathons & prototype pitch days
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#202124]" />
-                  AI & modern web development student cohorts
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#202124]" />
-                  Faculty mentoring & computational thinking workshops
-                </li>
+              <ul className="space-y-2 text-xs text-[#202124] font-medium">
+                <li>• In-school hackathons &amp; prototype pitch days</li>
+                <li>• AI &amp; modern web development student cohorts</li>
+                <li>• Faculty mentoring &amp; computational thinking workshops</li>
               </ul>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-gray-100 shadow-xs space-y-5">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-[#202124]">Contact Information</h4>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                  Quick Support
-                </span>
-              </div>
+            <div className="bg-white rounded-2xl p-6 border border-black/[0.08] space-y-4">
+              <h4 className="text-sm font-semibold text-[#202124]">Contact Information</h4>
 
-              {/* Direct WhatsApp Callout Button */}
               <a
                 href="https://wa.me/919875721958?text=Hi%20KRE8ECH,%20I%20have%20a%20question%20about%20your%20programs!"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-xs sm:text-sm shadow-md hover:shadow-lg transition-all"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-[#25D366] hover:bg-[#20ba59] text-white font-semibold text-sm transition-colors"
               >
-                <WhatsAppIcon className="w-5 h-5 text-white" />
+                <WhatsAppIcon className="w-4 h-4 text-white" />
                 <span>Ask on WhatsApp (+91 98757 21958)</span>
               </a>
 
-              <div className="space-y-3.5 text-xs text-gray-600 pt-1">
-                <div className="flex items-start gap-3">
-                  <Mail className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-3 text-xs text-[#525252] pt-1">
+                <div className="flex items-start gap-2.5">
+                  <Mail className="w-4 h-4 text-[#6B7280] shrink-0 mt-0.5" strokeWidth={1.75} />
                   <div>
-                    <span className="font-bold text-[#202124] block">Official Email</span>
-                    <a href="mailto:kre8ech@gmail.com" className="text-gray-700 hover:text-black font-semibold hover:underline">
-                      kre8ech@gmail.com
-                    </a>
+                    <span className="font-semibold text-[#202124] block">Official Email</span>
+                    <a href="mailto:kre8ech@gmail.com" className="hover:underline">kre8ech@gmail.com</a>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <Phone className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5">
+                  <Phone className="w-4 h-4 text-[#6B7280] shrink-0 mt-0.5" strokeWidth={1.75} />
                   <div>
-                    <span className="font-bold text-[#202124] block">WhatsApp & Contact Number</span>
-                    <a href="tel:+919875721958" className="text-gray-700 hover:text-black font-semibold hover:underline">
-                      +91 98757 21958
-                    </a>
+                    <span className="font-semibold text-[#202124] block">WhatsApp &amp; Phone</span>
+                    <a href="tel:+919875721958" className="hover:underline tabular-nums">+91 98757 21958</a>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <Clock className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5">
+                  <Clock className="w-4 h-4 text-[#6B7280] shrink-0 mt-0.5" strokeWidth={1.75} />
                   <div>
-                    <span className="font-bold text-[#202124] block">Response Hours</span>
+                    <span className="font-semibold text-[#202124] block">Response Hours</span>
                     <span>Monday to Saturday, 10:00 AM – 06:00 PM IST</span>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-[#6B7280] shrink-0 mt-0.5" strokeWidth={1.75} />
                   <div>
-                    <span className="font-bold text-[#202124] block">Program Hub</span>
-                    <span>Delhi NCR & Hybrid Online Cohorts Across India</span>
+                    <span className="font-semibold text-[#202124] block">Program Hub</span>
+                    <span>Delhi NCR &amp; Hybrid Online Cohorts Across India</span>
                   </div>
                 </div>
               </div>
