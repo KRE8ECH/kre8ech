@@ -26,10 +26,10 @@ export default function FloatingWhatsAppButton() {
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex items-center justify-center w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-[0_6px_20px_rgba(37,211,102,0.45)] hover:shadow-[0_8px_28px_rgba(37,211,102,0.65)] hover:scale-110 active:scale-95 transition-all duration-200 select-none"
+        className="flex items-center justify-center w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-[0_6px_20px_rgba(0,0,0,0.16)] active:scale-[0.97] transition-[background-color,transform] duration-150 select-none"
         title="Chat on WhatsApp (+91 98757 21958)"
       >
-        <WhatsAppIcon className="w-7 h-7 sm:w-8 sm:h-8 text-white drop-shadow-xs" />
+        <WhatsAppIcon className="w-6 h-6 text-white" />
       </a>
     </aside>
   );

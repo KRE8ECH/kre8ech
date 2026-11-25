@@ -33,14 +33,12 @@ const KEYS = {
   WEBHOOK: "kre8ech_webhook_url",
 };
 
-// Safe storage access
 const getLocalData = <T>(key: string, fallback: T): T => {
   if (typeof window === "undefined") return fallback;
   try {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : fallback;
-  } catch (e) {
-    console.error(`Error reading ${key} from localStorage`, e);
+  } catch {
     return fallback;
   }
 };
@@ -49,12 +47,33 @@ const setLocalData = <T>(key: string, data: T): void => {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {
-    console.error(`Error writing ${key} to localStorage`, e);
+  } catch {
+    // Ignore storage quota / private mode failures
   }
 };
 
-// Program Data Access
+const escapeCsvField = (value: unknown): string => {
+  const str = String(value ?? "").replace(/"/g, '""');
+  return `"${str}"`;
+};
+
+const downloadCsv = (filenamePrefix: string, headers: string[], rows: unknown[][]): void => {
+  const csvLines = [
+    headers.map(escapeCsvField).join(","),
+    ...rows.map((row) => row.map(escapeCsvField).join(","))
+  ];
+  const blob = new Blob(["\uFEFF" + csvLines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${filenamePrefix}_${new Date().toISOString().split("T")[0]}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+// Program Data
 export const getProgramData = (): ProgramOverview => {
   return getLocalData<ProgramOverview>(KEYS.PROGRAM, initialProgramData);
 };
@@ -63,7 +82,7 @@ export const saveProgramData = (data: ProgramOverview): void => {
   setLocalData(KEYS.PROGRAM, data);
 };
 
-// Projects Access
+// Projects
 export const getProjects = (): Project[] => {
   return getLocalData<Project[]>(KEYS.PROJECTS, initialProjects);
 };
@@ -73,22 +92,18 @@ export const saveProjects = (projects: Project[]): void => {
 };
 
 export const addProject = (project: Project): void => {
-  const current = getProjects();
-  saveProjects([project, ...current]);
+  saveProjects([project, ...getProjects()]);
 };
 
 export const updateProject = (updated: Project): void => {
-  const current = getProjects();
-  const next = current.map((p) => (p.id === updated.id ? updated : p));
-  saveProjects(next);
+  saveProjects(getProjects().map((p) => (p.id === updated.id ? updated : p)));
 };
 
 export const deleteProject = (id: string): void => {
-  const current = getProjects();
-  saveProjects(current.filter((p) => p.id !== id));
+  saveProjects(getProjects().filter((p) => p.id !== id));
 };
 
-// Achievements Access
+// Achievements
 export const getAchievements = (): Achievement[] => {
   return getLocalData<Achievement[]>(KEYS.ACHIEVEMENTS, initialAchievements);
 };
@@ -98,16 +113,14 @@ export const saveAchievements = (achievements: Achievement[]): void => {
 };
 
 export const addAchievement = (achievement: Achievement): void => {
-  const current = getAchievements();
-  saveAchievements([achievement, ...current]);
+  saveAchievements([achievement, ...getAchievements()]);
 };
 
 export const updateAchievement = (updated: Achievement): void => {
-  const current = getAchievements();
-  saveAchievements(current.map((a) => (a.id === updated.id ? updated : a)));
+  saveAchievements(getAchievements().map((a) => (a.id === updated.id ? updated : a)));
 };
 
-// Hackathons Access
+// Hackathons
 export const getHackathons = (): Hackathon[] => {
   return getLocalData<Hackathon[]>(KEYS.HACKATHONS, initialHackathons);
 };
@@ -117,16 +130,14 @@ export const saveHackathons = (hackathons: Hackathon[]): void => {
 };
 
 export const addHackathon = (hackathon: Hackathon): void => {
-  const current = getHackathons();
-  saveHackathons([hackathon, ...current]);
+  saveHackathons([hackathon, ...getHackathons()]);
 };
 
 export const updateHackathon = (updated: Hackathon): void => {
-  const current = getHackathons();
-  saveHackathons(current.map((h) => (h.id === updated.id ? updated : h)));
+  saveHackathons(getHackathons().map((h) => (h.id === updated.id ? updated : h)));
 };
 
-// Problem Statements Access
+// Problem Statements
 export const getProblemStatements = (): ProblemStatement[] => {
   return getLocalData<ProblemStatement[]>(KEYS.PROBLEM_STATEMENTS, initialProblemStatements);
 };
@@ -136,21 +147,18 @@ export const saveProblemStatements = (statements: ProblemStatement[]): void => {
 };
 
 export const addProblemStatement = (statement: ProblemStatement): void => {
-  const current = getProblemStatements();
-  saveProblemStatements([statement, ...current]);
+  saveProblemStatements([statement, ...getProblemStatements()]);
 };
 
 export const updateProblemStatement = (updated: ProblemStatement): void => {
-  const current = getProblemStatements();
-  saveProblemStatements(current.map((ps) => (ps.id === updated.id ? updated : ps)));
+  saveProblemStatements(getProblemStatements().map((ps) => (ps.id === updated.id ? updated : ps)));
 };
 
 export const deleteProblemStatement = (id: string): void => {
-  const current = getProblemStatements();
-  saveProblemStatements(current.filter((ps) => ps.id !== id));
+  saveProblemStatements(getProblemStatements().filter((ps) => ps.id !== id));
 };
 
-// Student Registrations Access
+// Student Registrations
 export const getStudentRegistrations = (): StudentRegistration[] => {
   const initialRegistrations: StudentRegistration[] = [
     {
@@ -204,17 +212,16 @@ export const saveStudentRegistrations = (registrations: StudentRegistration[]): 
 };
 
 export const updateStudentRegistration = (updated: StudentRegistration): void => {
-  const current = getStudentRegistrations();
-  const next = current.map((r) => (r.id === updated.id ? updated : r));
-  saveStudentRegistrations(next);
+  saveStudentRegistrations(getStudentRegistrations().map((r) => (r.id === updated.id ? updated : r)));
 };
 
 export const deleteStudentRegistration = (id: string): void => {
-  const current = getStudentRegistrations();
-  saveStudentRegistrations(current.filter((r) => r.id !== id));
+  saveStudentRegistrations(getStudentRegistrations().filter((r) => r.id !== id));
 };
 
-export const registerStudent = (student: Omit<StudentRegistration, "id" | "registeredAt" | "status">): StudentRegistration => {
+export const registerStudent = (
+  student: Omit<StudentRegistration, "id" | "registeredAt" | "status">
+): StudentRegistration => {
   const current = getStudentRegistrations();
   const newRecord: StudentRegistration = {
     ...student,
@@ -223,22 +230,6 @@ export const registerStudent = (student: Omit<StudentRegistration, "id" | "regis
     status: "Confirmed"
   };
   setLocalData(KEYS.REGISTRATIONS, [newRecord, ...current]);
-
-  // Optional: trigger webhook in background if configured
-  const webhookUrl = getWebhookUrl();
-  if (webhookUrl && typeof window !== "undefined") {
-    try {
-      fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newRecord),
-        mode: "no-cors"
-      }).catch((e) => console.log("Webhook ping sent:", e));
-    } catch (e) {
-      // ignore
-    }
-  }
-
   return newRecord;
 };
 
@@ -279,22 +270,30 @@ export const setStudentSession = (session: StudentSession | null): void => {
   setLocalData(KEYS.STUDENT_USER, session);
 };
 
-// Admin Auth State
+// Admin Auth State (session-scoped so tab close locks access automatically)
 export const isAdminAuthenticated = (): boolean => {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem(KEYS.ADMIN_AUTH) === "true";
+  try {
+    return sessionStorage.getItem(KEYS.ADMIN_AUTH) === "true";
+  } catch {
+    return false;
+  }
 };
 
 export const setAdminAuthenticated = (isAuth: boolean): void => {
   if (typeof window === "undefined") return;
-  if (isAuth) {
-    localStorage.setItem(KEYS.ADMIN_AUTH, "true");
-  } else {
+  try {
+    if (isAuth) {
+      sessionStorage.setItem(KEYS.ADMIN_AUTH, "true");
+    } else {
+      sessionStorage.removeItem(KEYS.ADMIN_AUTH);
+    }
     localStorage.removeItem(KEYS.ADMIN_AUTH);
+  } catch {
+    // ignore
   }
 };
 
-// Export CSV
 export const exportRegistrationsToCSV = (registrations: StudentRegistration[]): void => {
   const headers = [
     "ID",
@@ -312,37 +311,22 @@ export const exportRegistrationsToCSV = (registrations: StudentRegistration[]): 
   ];
   const rows = registrations.map((r) => [
     r.id,
-    `"${r.fullName || ""}"`,
-    `"${r.email || ""}"`,
-    `"${r.phoneNumber || ""}"`,
-    `"${r.schoolCollege || ""}"`,
-    `"${r.classYear || ""}"`,
-    `"${r.city || ""}"`,
-    `"${(r.techInterests || []).join(", ")}"`,
-    `"${r.registeredProgram || "N/A"}"`,
+    r.fullName || "",
+    r.email || "",
+    r.phoneNumber || "",
+    r.schoolCollege || "",
+    r.classYear || "",
+    r.city || "",
+    (r.techInterests || []).join(", "),
+    r.registeredProgram || "N/A",
     r.status || "Confirmed",
     r.registeredAt || "",
-    `"${(r.notes || "").replace(/"/g, '""')}"`
+    r.notes || ""
   ]);
-
-  const csvContent =
-    "data:text/csv;charset=utf-8," +
-    [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute(
-    "download",
-    `kre8ech_student_records_${new Date().toISOString().split("T")[0]}.csv`
-  );
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadCsv("kre8ech_student_records", headers, rows);
 };
 
-// ==========================================
-// Hackready Workshop Registrations Access
-// ==========================================
+// Hackready Workshop Registrations
 export const getHackreadyRegistrations = (): HackreadyRegistration[] => {
   const initialHackready: HackreadyRegistration[] = [
     {
@@ -393,14 +377,11 @@ export const saveHackreadyRegistrations = (registrations: HackreadyRegistration[
 };
 
 export const updateHackreadyRegistration = (updated: HackreadyRegistration): void => {
-  const current = getHackreadyRegistrations();
-  const next = current.map((r) => (r.id === updated.id ? updated : r));
-  saveHackreadyRegistrations(next);
+  saveHackreadyRegistrations(getHackreadyRegistrations().map((r) => (r.id === updated.id ? updated : r)));
 };
 
 export const deleteHackreadyRegistration = (id: string): void => {
-  const current = getHackreadyRegistrations();
-  saveHackreadyRegistrations(current.filter((r) => r.id !== id));
+  saveHackreadyRegistrations(getHackreadyRegistrations().filter((r) => r.id !== id));
 };
 
 export const registerHackreadyStudent = (
@@ -416,7 +397,6 @@ export const registerHackreadyStudent = (
   };
   setLocalData(KEYS.HACKREADY, [newRecord, ...current]);
 
-  // Also sync into main StudentRegistration list so it shows up in global records
   try {
     const mainList = getStudentRegistrations();
     const syncedStudent: StudentRegistration = {
@@ -434,29 +414,13 @@ export const registerHackreadyStudent = (
       notes: `Roll No: ${newRecord.rollNo} | Branch: ${newRecord.branch} | Sem: ${newRecord.semester}`
     };
     saveStudentRegistrations([syncedStudent, ...mainList.filter((s) => s.id !== newRecord.id)]);
-  } catch (e) {
-    // fallback
-  }
-
-  // Webhook trigger if configured
-  const webhookUrl = getWebhookUrl();
-  if (webhookUrl && typeof window !== "undefined") {
-    try {
-      fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newRecord, program: "Hackready Workshop" }),
-        mode: "no-cors"
-      }).catch((e) => console.log("Webhook ping sent:", e));
-    } catch (e) {
-      // ignore
-    }
+  } catch {
+    // ignore secondary sync failure
   }
 
   return newRecord;
 };
 
-// Export Hackready to CSV (compatible with Excel via BOM)
 export const exportHackreadyToCSV = (registrations: HackreadyRegistration[]): void => {
   const headers = [
     "Roll No",
@@ -469,32 +433,16 @@ export const exportHackreadyToCSV = (registrations: HackreadyRegistration[]): vo
     "Registration Date",
     "Notes"
   ];
-
   const rows = registrations.map((r) => [
-    `"${(r.rollNo || "").replace(/"/g, '""')}"`,
-    `"${(r.fullName || "").replace(/"/g, '""')}"`,
-    `"${(r.branch || "").replace(/"/g, '""')}"`,
-    `"${(r.semester || "").replace(/"/g, '""')}"`,
-    `"${(r.email || "").replace(/"/g, '""')}"`,
-    `"${(r.phoneNumber || "").replace(/"/g, '""')}"`,
+    r.rollNo || "",
+    r.fullName || "",
+    r.branch || "",
+    r.semester || "",
+    r.email || "",
+    r.phoneNumber || "",
     r.status || "Confirmed",
     r.registeredAt || "",
-    `"${(r.notes || "").replace(/"/g, '""')}"`
+    r.notes || ""
   ]);
-
-  // \uFEFF Byte Order Mark ensures Microsoft Excel opens UTF-8 encoded text properly
-  const csvContent =
-    "data:text/csv;charset=utf-8,\uFEFF" +
-    [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute(
-    "download",
-    `kre8ech_hackready_workshop_students_${new Date().toISOString().split("T")[0]}.csv`
-  );
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadCsv("kre8ech_hackready_workshop_students", headers, rows);
 };
