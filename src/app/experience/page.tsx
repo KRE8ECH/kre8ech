@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Sparkles,
   ArrowRight,
@@ -26,6 +27,18 @@ import {
   AnimatedRocket,
   AnimatedRobot
 } from "@/components/hero/HeroInteractiveStickers";
+
+const BuilderForge3D = dynamic(
+  () => import("@/components/three/BuilderForge3D"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[380px] rounded-3xl bg-[#121316] border border-gray-800 animate-pulse flex items-center justify-center text-xs font-bold text-gray-400">
+        Loading 3D Interactive Forge...
+      </div>
+    )
+  }
+);
 
 export default function ExperiencePage() {
   return (
@@ -72,6 +85,11 @@ export default function ExperiencePage() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Three.js 3D Interactive Lab */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <BuilderForge3D />
       </section>
 
       {/* Interactive Builder Playground */}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
   Sparkles,
@@ -54,6 +55,23 @@ import {
   AnimatedRocket,
   AnimatedRobot
 } from "@/components/hero/HeroInteractiveStickers";
+
+const HeroThreeBackdrop = dynamic(
+  () => import("@/components/three/HeroThreeBackdrop"),
+  { ssr: false }
+);
+
+const BuilderForge3D = dynamic(
+  () => import("@/components/three/BuilderForge3D"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[360px] rounded-3xl bg-[#121316] border border-gray-800 animate-pulse flex items-center justify-center text-xs font-bold text-gray-400">
+        Loading 3D Interactive Forge...
+      </div>
+    )
+  }
+);
 
 const skillMarqueeItems = [
   "AI & LLM Agents",
@@ -119,9 +137,10 @@ export default function HomePage() {
           SECTION 1 — HERO
           ========================================================= */}
       <section className="relative pt-8 sm:pt-14 pb-12 sm:pb-16 bg-gradient-to-b from-[#FFFDF9] via-white to-white overflow-hidden">
-        {/* Crisp architectural background grid + soft radial aura */}
-        <div className="absolute inset-0 bg-subtle-grid pointer-events-none -z-20" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-[#FFF3C4]/45 via-[#FFF9E8]/20 to-transparent blur-3xl pointer-events-none -z-10" />
+        {/* Crisp architectural background grid + Three.js ambient 3D depth + soft radial aura */}
+        <div className="absolute inset-0 bg-subtle-grid pointer-events-none z-0" />
+        <HeroThreeBackdrop />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-[#FFF3C4]/45 via-[#FFF9E8]/20 to-transparent blur-3xl pointer-events-none z-0" />
 
         {/* Decorative Floating Tech Stickers (Interactive on click!) */}
         {/* 1. TOP-LEFT: Laptop Sticker */}
@@ -329,6 +348,15 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* =========================================================
+          THREE.JS GEN-Z 3D INTERACTIVE BUILDER FORGE
+          ========================================================= */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal>
+          <BuilderForge3D compact />
+        </Reveal>
       </section>
 
       {/* =========================================================
