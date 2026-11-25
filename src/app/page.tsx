@@ -44,24 +44,74 @@ import {
   StageBuilder2D,
   StageInnovator2D
 } from "@/components/illustrations/CapablStyle2DIllustrations";
-import { getProgramData, getProjects, getAchievements, getHackathons } from "@/lib/storage";
-import { ProgramOverview, Project, Achievement, Hackathon } from "@/types";
+import { getProgramData, getProjects, getAchievements, getHackathons, getAnnouncements } from "@/lib/storage";
+import { ProgramOverview, Project, Achievement, Hackathon, Announcement } from "@/types";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
+import { Reveal, AnimatedNumber, RotatingPhrase } from "@/components/ui/DynamicMotion";
+import {
+  AnimatedLaptop,
+  InteractiveBulb,
+  AnimatedRocket,
+  AnimatedRobot
+} from "@/components/hero/HeroInteractiveStickers";
+
+const skillMarqueeItems = [
+  "AI & LLM Agents",
+  "Next.js & React MVPs",
+  "Figma UI Wireframing",
+  "Hackready College Track",
+  "Prompt Engineering",
+  "IoT & Smart Tech",
+  "3-Minute Stage Pitching",
+  "Offline Hackathon Finale"
+];
+
+const stageInsights = [
+  {
+    label: "Stage 01 — Consumer",
+    focus: "Everyday digital fluency without seeing under the hood yet.",
+    unlock: "Mindset shift starts with guided teardown labs."
+  },
+  {
+    label: "Stage 02 — Explorer",
+    focus: "Deconstructs websites, APIs, prompts, and daily problem spaces.",
+    unlock: "Unlocks: Computational thinking & AI tool mastery."
+  },
+  {
+    label: "Stage 03 — Builder",
+    focus: "Turns user problems into wireframes, responsive UI, and working code.",
+    unlock: "Unlocks: Figma systems, full-stack web MVPs & deployments."
+  },
+  {
+    label: "Stage 04 — Innovator",
+    focus: "Pitches live prototypes in teams at offline hackathons and competitions.",
+    unlock: "Unlocks: Hackathon readiness, demo confidence & podium wins."
+  }
+];
 
 export default function HomePage() {
   const [program, setProgram] = useState<ProgramOverview | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [hackathons, setHackathons] = useState<Hackathon[]>([]);
+  const [pinnedAnnouncement, setPinnedAnnouncement] = useState<Announcement | null>(null);
+  const [activeStickerHint, setActiveStickerHint] = useState<string | null>(null);
+  const [activeStageIdx, setActiveStageIdx] = useState<number>(2);
+  const [activeProgramWeek, setActiveProgramWeek] = useState<number>(1);
+  const [showHeroPlayground, setShowHeroPlayground] = useState<boolean>(false);
 
   useEffect(() => {
     setProgram(getProgramData());
     setProjects(getProjects().slice(0, 3));
     setAchievements(getAchievements());
     setHackathons(getHackathons());
+    const allAnnouncements = getAnnouncements();
+    setPinnedAnnouncement(allAnnouncements.find((a) => a.isPinned) || allAnnouncements[0] || null);
   }, []);
 
   const sakshamAchievement = achievements[0];
+  const selectedProgramWeek =
+    program?.weeks.find((w) => w.weekNumber === activeProgramWeek) || program?.weeks[0] || null;
 
   return (
     <div className="space-y-14 sm:space-y-16 pb-16 overflow-hidden">
@@ -69,37 +119,91 @@ export default function HomePage() {
           SECTION 1 — HERO
           ========================================================= */}
       <section className="relative pt-8 sm:pt-14 pb-12 sm:pb-16 bg-gradient-to-b from-[#FFFDF9] via-white to-white overflow-hidden">
-        {/* Soft radial background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-[#FFF3C4]/40 via-[#FFF9E8]/20 to-transparent blur-3xl pointer-events-none -z-10" />
+        {/* Crisp architectural background grid + soft radial aura */}
+        <div className="absolute inset-0 bg-subtle-grid pointer-events-none -z-20" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-[#FFF3C4]/45 via-[#FFF9E8]/20 to-transparent blur-3xl pointer-events-none -z-10" />
 
-        {/* Decorative Floating Tech Stickers (Desktop - Pure illustrations, zero blocks/boundaries) */}
+        {/* Decorative Floating Tech Stickers (Interactive on click!) */}
         {/* 1. TOP-LEFT: Laptop Sticker */}
-        <div className="hidden lg:block absolute top-12 xl:top-14 left-8 xl:left-20 z-10 animate-float-slow">
+        <button
+          type="button"
+          onClick={() => setActiveStickerHint("Build & deploy functional software in guided coding sprints")}
+          className="hidden lg:block absolute top-12 xl:top-14 left-8 xl:left-20 z-10 animate-float-slow focus:outline-none"
+          title="Click for builder insight"
+        >
           <LaptopSticker size={84} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-[0_8px_20px_rgba(0,0,0,0.06)]" />
-        </div>
+        </button>
 
         {/* 2. TOP-RIGHT: Rocket Sticker */}
-        <div className="hidden lg:block absolute top-14 xl:top-16 right-8 xl:right-20 z-10 animate-float-reverse">
+        <button
+          type="button"
+          onClick={() => setActiveStickerHint("Ship your working MVP in 4 weeks and pitch live")}
+          className="hidden lg:block absolute top-14 xl:top-16 right-8 xl:right-20 z-10 animate-float-reverse focus:outline-none"
+          title="Click for launch insight"
+        >
           <RocketSticker size={84} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-[0_8px_20px_rgba(246,201,0,0.22)]" />
-        </div>
+        </button>
 
         {/* 3. BOTTOM-LEFT: Lightbulb Sticker */}
-        <div className="hidden xl:block absolute bottom-16 left-12 xl:left-24 z-10 animate-float-slow">
+        <button
+          type="button"
+          onClick={() => setActiveStickerHint("Turn everyday student challenges into prototype ideas")}
+          className="hidden xl:block absolute bottom-16 left-12 xl:left-24 z-10 animate-float-slow focus:outline-none"
+          title="Click for ideation insight"
+        >
           <LightbulbSticker size={72} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-[0_8px_20px_rgba(246,201,0,0.25)]" />
-        </div>
+        </button>
 
         {/* 4. BOTTOM-RIGHT: Robot Sticker */}
-        <div className="hidden xl:block absolute bottom-16 right-12 xl:right-24 z-10 animate-float-reverse">
+        <button
+          type="button"
+          onClick={() => setActiveStickerHint("Learn AI tools, agentic workflows, and smart automation")}
+          className="hidden xl:block absolute bottom-16 right-12 xl:right-24 z-10 animate-float-reverse focus:outline-none"
+          title="Click for AI insight"
+        >
           <RobotSticker size={76} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-[0_8px_20px_rgba(0,0,0,0.06)]" />
-        </div>
+        </button>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          {/* Dynamic Live Cohort Ribbon */}
+          {pinnedAnnouncement && (
+            <div className="mb-3 flex justify-center">
+              <Link
+                href="/register/hackready"
+                className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#121316] text-white text-[11px] font-bold shadow-sm hover:bg-black transition-all group"
+              >
+                <span className="px-1.5 py-0.5 rounded bg-[#F6C900] text-[#202124] text-[10px] font-black uppercase">
+                  {pinnedAnnouncement.tag}
+                </span>
+                <span className="truncate max-w-[230px] sm:max-w-md">{pinnedAnnouncement.title}</span>
+                <ArrowRight className="w-3 h-3 text-[#F6C900] transition-transform group-hover:translate-x-0.5 shrink-0" />
+              </Link>
+            </div>
+          )}
+
           {/* Pill Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50/90 border border-amber-200/70 text-[#202124] text-xs font-bold tracking-wide mb-5 sm:mb-6 shadow-sm">
             <span className="flex h-2 w-2 rounded-full bg-[#F6C900] ring-4 ring-[#F6C900]/30 animate-pulse" />
             <span>From curious minds to creative builders</span>
             <SparkleSticker size={14} />
           </div>
+
+          {activeStickerHint && (
+            <div className="mb-4 flex justify-center animate-in fade-in duration-200">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white border border-[#F6C900] text-xs font-bold text-[#202124] shadow-sm">
+                <Zap className="w-3.5 h-3.5 text-[#F6C900] fill-[#F6C900]" />
+                <span>{activeStickerHint}</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveStickerHint(null)}
+                  className="text-gray-400 hover:text-[#202124] ml-1 text-[11px] font-black"
+                  aria-label="Dismiss tip"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-[#202124] tracking-tight leading-[1.08] mb-5 sm:mb-6">
@@ -111,19 +215,24 @@ export default function HomePage() {
             </span>
           </h1>
 
-          {/* Subtext description */}
+          {/* Subtext description with dynamic cycling focus */}
           <p className="max-w-2xl mx-auto text-base sm:text-lg text-gray-600 font-normal leading-relaxed mb-6 sm:mb-8">
-            Explore technology, learn AI, develop practical skills, build real projects and turn your ideas into something meaningful through guided cohorts and hackathons.
+            Explore technology, learn AI, and ship{" "}
+            <RotatingPhrase
+              phrases={["AI Assistants", "Web Applications", "Figma Systems", "Hackathon MVPs"]}
+              className="font-extrabold text-[#202124] underline decoration-[#F6C900] decoration-2 underline-offset-4"
+            />{" "}
+            — turning your ideas into something meaningful through guided cohorts and hackathons.
           </p>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 mb-8">
             <Link
               href="/builder-program"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-extrabold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-extrabold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
             >
               <span>Explore Builder Program</span>
-              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+              <ArrowRight className="w-4 h-4 stroke-[2.5] transition-transform group-hover:translate-x-0.5" />
             </Link>
 
             <Link
@@ -145,44 +254,80 @@ export default function HomePage() {
             </a>
           </div>
 
-          {/* Mobile view of clean tech stickers (Pure illustrations without blocks or boundaries) */}
+          {/* Mobile view of interactive tech stickers */}
           <div className="lg:hidden flex items-center justify-center gap-6 sm:gap-8 mb-6">
-            <div className="animate-float-slow">
+            <button
+              type="button"
+              onClick={() => setActiveStickerHint("Build & deploy functional software in guided coding sprints")}
+              className="animate-float-slow focus:outline-none"
+            >
               <LaptopSticker size={52} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-sm" />
-            </div>
-            <div className="animate-float-reverse">
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveStickerHint("Turn everyday student challenges into prototype ideas")}
+              className="animate-float-reverse focus:outline-none"
+            >
               <LightbulbSticker size={46} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-sm" />
-            </div>
-            <div className="animate-float-slow">
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveStickerHint("Ship your working MVP in 4 weeks and pitch live")}
+              className="animate-float-slow focus:outline-none"
+            >
               <RocketSticker size={52} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-sm" />
-            </div>
-            <div className="animate-float-reverse">
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveStickerHint("Learn AI tools, agentic workflows, and smart automation")}
+              className="animate-float-reverse focus:outline-none"
+            >
               <RobotSticker size={48} className="hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-sm" />
-            </div>
+            </button>
           </div>
 
-          {/* Clean Metric Highlights Strip */}
+          {/* Animated Metric Highlights Strip */}
           <div className="pt-6 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
-            <div className="p-4 bg-white rounded-2xl border border-gray-100/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+            <div className="p-4 bg-white rounded-2xl border border-gray-100/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:border-[#F6C900] hover:-translate-y-0.5 hover:shadow-md transition-all">
               <p className="text-xs text-gray-500 font-medium">Program Duration</p>
-              <p className="text-base font-extrabold text-[#202124] mt-0.5">4 Weeks • 12 Days</p>
+              <p className="text-base font-extrabold text-[#202124] mt-0.5">
+                <AnimatedNumber target={4} suffix=" Weeks" /> • <AnimatedNumber target={12} suffix=" Days" />
+              </p>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl border border-gray-100/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+            <div className="p-4 bg-white rounded-2xl border border-gray-100/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:border-[#F6C900] hover:-translate-y-0.5 hover:shadow-md transition-all">
               <p className="text-xs text-gray-500 font-medium">Daily Online Format</p>
-              <p className="text-base font-extrabold text-[#202124] mt-0.5">60m Live + 30m Doubt</p>
+              <p className="text-base font-extrabold text-[#202124] mt-0.5">
+                <AnimatedNumber target={60} suffix="m Live" /> + <AnimatedNumber target={30} suffix="m Doubt" />
+              </p>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl border border-gray-100/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+            <div className="p-4 bg-white rounded-2xl border border-gray-100/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:border-[#F6C900] hover:-translate-y-0.5 hover:shadow-md transition-all">
               <p className="text-xs text-gray-500 font-medium">Proven Milestone</p>
-              <p className="text-base font-extrabold text-[#202124] mt-0.5">Saksham 1st Position</p>
+              <p className="text-base font-extrabold text-[#202124] mt-0.5">
+                Saksham <AnimatedNumber target={1} suffix="st" /> Position
+              </p>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl border border-gray-100/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-shadow">
+            <div className="p-4 bg-white rounded-2xl border border-gray-100/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:border-[#F6C900] hover:-translate-y-0.5 hover:shadow-md transition-all">
               <p className="text-xs text-gray-500 font-medium">Target Students</p>
-              <p className="text-base font-extrabold text-[#202124] mt-0.5">Class 9 Onwards</p>
+              <p className="text-base font-extrabold text-[#202124] mt-0.5">
+                Class <AnimatedNumber target={9} suffix="+" /> Onwards
+              </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Dynamic Continuous Skills Ticker */}
+      <section aria-label="Skills covered at KRE8ECH" className="bg-[#121316] text-white border-y border-gray-800 py-3.5 overflow-hidden">
+        <div className="animate-marquee flex items-center gap-8">
+          {[...skillMarqueeItems, ...skillMarqueeItems].map((item, idx) => (
+            <div key={idx} className="flex items-center gap-3 whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-[#F6C900]" />
+              <span className="text-xs font-extrabold tracking-wide uppercase text-gray-200">{item}</span>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -240,104 +385,170 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Seamless 4-Stage Pathway: User -> Explorer -> Builder -> Innovator */}
-        <div className="bg-[#FAF9F5] rounded-3xl p-6 sm:p-10 border border-gray-100/80 shadow-sm mb-10 sm:mb-12">
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-8 pb-4 border-b border-gray-200/50">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">The KRE8ECH Journey</span>
-              <h3 className="text-xl sm:text-2xl font-black text-[#202124] mt-0.5">The Student Builder Evolution</h3>
+        {/* Seamless Interactive 4-Stage Pathway: User -> Explorer -> Builder -> Innovator */}
+        <Reveal>
+          <div className="bg-[#FAF9F5] rounded-3xl p-6 sm:p-10 border border-gray-100/80 shadow-sm mb-10 sm:mb-12">
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-5">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">The KRE8ECH Journey</span>
+                <h3 className="text-xl sm:text-2xl font-black text-[#202124] mt-0.5">The Student Builder Evolution</h3>
+              </div>
+              <span className="text-xs font-semibold px-3 py-1 bg-white rounded-full border border-gray-200 text-gray-700 shadow-xs">
+                Click a stage to inspect progression • Phase {activeStageIdx + 1} / 4
+              </span>
             </div>
-            <span className="text-xs font-semibold px-3 py-1 bg-white rounded-full border border-gray-200 text-gray-700 shadow-xs">
-              4-Phase Progressive Growth
-            </span>
+
+            {/* Animated Stage Progress Bar */}
+            <div className="w-full h-2 rounded-full bg-gray-200/80 overflow-hidden mb-7">
+              <div
+                className="h-full bg-[#F6C900] rounded-full transition-[width] duration-500 ease-out"
+                style={{ width: `${(activeStageIdx + 1) * 25}%` }}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* Stage 1 */}
+              <button
+                type="button"
+                onClick={() => setActiveStageIdx(0)}
+                onMouseEnter={() => setActiveStageIdx(0)}
+                className={`text-left bg-white p-6 rounded-2xl border transition-all flex flex-col justify-between cursor-pointer ${
+                  activeStageIdx === 0
+                    ? "border-[#202124] ring-2 ring-[#F6C900]/60 shadow-lg -translate-y-1"
+                    : "border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center font-bold text-gray-600 text-xs">
+                      01
+                    </div>
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-gray-400">Starting Point</span>
+                  </div>
+                  <div className="my-2 py-1">
+                    <StageUser2D className="h-20 mx-auto" />
+                  </div>
+                  <h4 className="text-base font-extrabold text-[#202124] mb-1.5">
+                    Technology User
+                  </h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Consuming digital content, social feeds, gaming, and using digital applications as everyday passive tools.
+                  </p>
+                </div>
+              </button>
+
+              {/* Stage 2 */}
+              <button
+                type="button"
+                onClick={() => setActiveStageIdx(1)}
+                onMouseEnter={() => setActiveStageIdx(1)}
+                className={`text-left bg-white p-6 rounded-2xl border transition-all flex flex-col justify-between cursor-pointer ${
+                  activeStageIdx === 1
+                    ? "border-[#202124] ring-2 ring-[#F6C900]/60 shadow-lg -translate-y-1"
+                    : "border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-900 border border-amber-200/60 flex items-center justify-center font-bold text-xs">
+                      02
+                    </div>
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-amber-700">Curiosity</span>
+                  </div>
+                  <div className="my-2 py-1">
+                    <StageExplorer2D className="h-20 mx-auto" />
+                  </div>
+                  <h4 className="text-base font-extrabold text-[#202124] mb-1.5">
+                    Explorer
+                  </h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Deconstructing how apps work, exploring AI logic, understanding data flows, and spotting daily problem areas.
+                  </p>
+                </div>
+              </button>
+
+              {/* Stage 3 */}
+              <button
+                type="button"
+                onClick={() => setActiveStageIdx(2)}
+                onMouseEnter={() => setActiveStageIdx(2)}
+                className={`text-left bg-white p-6 rounded-2xl border transition-all flex flex-col justify-between relative cursor-pointer ${
+                  activeStageIdx === 2
+                    ? "border-[#F6C900] ring-2 ring-[#F6C900] shadow-lg -translate-y-1"
+                    : "border-[#F6C900]/70 shadow-[0_4px_16px_rgba(246,201,0,0.12)] hover:shadow-lg"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#F6C900] text-[#202124] flex items-center justify-center font-black text-xs shadow-xs">
+                      03
+                    </div>
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-amber-800">Code & Create</span>
+                  </div>
+                  <div className="my-2 py-1">
+                    <StageBuilder2D className="h-20 mx-auto" />
+                  </div>
+                  <h4 className="text-base font-extrabold text-[#202124] mb-1.5">
+                    Builder
+                  </h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Writing code, leveraging AI developer tools, designing Figma wireframes, building MVPs, and debugging solutions.
+                  </p>
+                </div>
+              </button>
+
+              {/* Stage 4 */}
+              <button
+                type="button"
+                onClick={() => setActiveStageIdx(3)}
+                onMouseEnter={() => setActiveStageIdx(3)}
+                className={`text-left bg-[#121316] text-white p-6 rounded-2xl border transition-all flex flex-col justify-between cursor-pointer ${
+                  activeStageIdx === 3
+                    ? "border-[#F6C900] ring-2 ring-[#F6C900]/80 shadow-xl -translate-y-1"
+                    : "border-gray-800 shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:shadow-xl"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#F6C900] text-[#202124] font-black text-xs flex items-center justify-center">
+                      04
+                    </div>
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-[#F6C900]">The Goal</span>
+                  </div>
+                  <div className="my-2 py-1">
+                    <StageInnovator2D className="h-20 mx-auto" />
+                  </div>
+                  <h4 className="text-base font-extrabold text-white mb-1.5">
+                    Innovator
+                  </h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Pitching prototypes on live hackathon stages, working in teams, solving unaddressed problems, and launching real products.
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            {/* Dynamic Live Stage Readout Bar */}
+            <div className="mt-5 p-4 rounded-2xl bg-white border border-gray-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="space-y-0.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-amber-800">
+                  {stageInsights[activeStageIdx].label}
+                </span>
+                <p className="text-xs sm:text-sm font-semibold text-[#202124]">
+                  {stageInsights[activeStageIdx].focus}{" "}
+                  <span className="text-gray-500 font-normal">({stageInsights[activeStageIdx].unlock})</span>
+                </p>
+              </div>
+              <Link
+                href="/register"
+                className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#202124] hover:bg-black text-white text-xs font-bold transition-colors"
+              >
+                <span>Start Your Evolution</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Stage 1 */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center font-bold text-gray-600 text-xs">
-                    01
-                  </div>
-                  <span className="text-[10px] font-bold tracking-wider uppercase text-gray-400">Starting Point</span>
-                </div>
-                <div className="my-2 py-1">
-                  <StageUser2D className="h-20 mx-auto" />
-                </div>
-                <h4 className="text-base font-extrabold text-[#202124] mb-1.5">
-                  Technology User
-                </h4>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Consuming digital content, social feeds, gaming, and using digital applications as everyday passive tools.
-                </p>
-              </div>
-            </div>
-
-            {/* Stage 2 */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-900 border border-amber-200/60 flex items-center justify-center font-bold text-xs">
-                    02
-                  </div>
-                  <span className="text-[10px] font-bold tracking-wider uppercase text-amber-700">Curiosity</span>
-                </div>
-                <div className="my-2 py-1">
-                  <StageExplorer2D className="h-20 mx-auto" />
-                </div>
-                <h4 className="text-base font-extrabold text-[#202124] mb-1.5">
-                  Explorer
-                </h4>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Deconstructing how apps work, exploring AI logic, understanding data flows, and spotting daily problem areas.
-                </p>
-              </div>
-            </div>
-
-            {/* Stage 3 */}
-            <div className="bg-white p-6 rounded-2xl border border-[#F6C900] shadow-[0_4px_16px_rgba(246,201,0,0.12)] hover:shadow-lg transition-all flex flex-col justify-between relative">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#F6C900] text-[#202124] flex items-center justify-center font-black text-xs shadow-xs">
-                    03
-                  </div>
-                  <span className="text-[10px] font-bold tracking-wider uppercase text-amber-800">Code & Create</span>
-                </div>
-                <div className="my-2 py-1">
-                  <StageBuilder2D className="h-20 mx-auto" />
-                </div>
-                <h4 className="text-base font-extrabold text-[#202124] mb-1.5">
-                  Builder
-                </h4>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Writing code, leveraging AI developer tools, designing Figma wireframes, building MVPs, and debugging solutions.
-                </p>
-              </div>
-            </div>
-
-            {/* Stage 4 */}
-            <div className="bg-[#121316] text-white p-6 rounded-2xl border border-gray-800 shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:shadow-xl transition-all flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#F6C900] text-[#202124] font-black text-xs flex items-center justify-center">
-                    04
-                  </div>
-                  <span className="text-[10px] font-bold tracking-wider uppercase text-[#F6C900]">The Goal</span>
-                </div>
-                <div className="my-2 py-1">
-                  <StageInnovator2D className="h-20 mx-auto" />
-                </div>
-                <h4 className="text-base font-extrabold text-white mb-1.5">
-                  Innovator
-                </h4>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  Pitching prototypes on live hackathon stages, working in teams, solving unaddressed problems, and launching real products.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        </Reveal>
 
         {/* Clean Context Banner */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-gray-50/80 rounded-3xl p-8 sm:p-10 border border-gray-100">
@@ -516,14 +727,54 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="text-center mt-10">
-          <Link
-            href="/experience"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#202124] hover:bg-black text-white text-xs font-bold transition-all shadow-sm"
-          >
-            <span>Explore The Full KRE8ECH Experience & Tooling</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+        {/* Interactive Builder Playground Drawer / Strip */}
+        <div className="mt-10 bg-[#FAF9F5] rounded-3xl p-6 sm:p-8 border border-gray-200/70">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-amber-800">
+                <Zap className="w-3.5 h-3.5 text-[#F6C900] fill-[#F6C900]" />
+                <span>Interactive Mini Lab</span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-[#202124]">
+                Test the KRE8ECH Builder Playground
+              </h3>
+              <p className="text-xs text-gray-600">
+                Click to test live code execution, idea sparking, MVP rocket launch, and bot greetings right here.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowHeroPlayground((prev) => !prev)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-gray-300 hover:border-[#202124] text-xs font-extrabold text-[#202124] shadow-xs transition-all"
+              >
+                <span>{showHeroPlayground ? "Hide Mini Lab" : "Launch Mini Lab"}</span>
+                <ChevronRight
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    showHeroPlayground ? "rotate-90" : ""
+                  }`}
+                />
+              </button>
+
+              <Link
+                href="/experience"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#202124] hover:bg-black text-white text-xs font-bold transition-all shadow-sm"
+              >
+                <span>Full Experience</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {showHeroPlayground && (
+            <div className="mt-6 pt-6 border-t border-gray-200/70 flex flex-wrap items-center justify-center gap-4 sm:gap-6 animate-in fade-in duration-200">
+              <AnimatedLaptop />
+              <InteractiveBulb />
+              <AnimatedRocket />
+              <AnimatedRobot />
+            </div>
+          )}
         </div>
       </section>
 
@@ -597,55 +848,118 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Right Column: 4-Week Preview Cards & 2D Illustration */}
+              {/* Right Column: Interactive 4-Week Preview Cards & Dynamic Syllabus */}
               <div className="lg:col-span-5 space-y-3">
                 <div className="p-3 bg-white rounded-2xl border border-gray-100 shadow-xs mb-3">
                   <FourWeekRoadmapIllustration2D className="w-full h-auto" />
                 </div>
 
-                <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 hover:border-gray-200 transition-all">
-                  <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-1">
-                    <span>WEEK 01 • 3 ONLINE DAYS</span>
-                    <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-800 text-[10px]">Foundation</span>
-                  </div>
-                  <h4 className="text-base font-extrabold text-[#202124]">EXPLORE</h4>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Introduction to technology, AI, computational thinking, and the builder mindset.
-                  </p>
-                </div>
+                {[
+                  {
+                    week: 1,
+                    header: "WEEK 01 • 3 ONLINE DAYS",
+                    badge: "Foundation",
+                    badgeCls: "bg-gray-200 text-gray-800",
+                    title: "EXPLORE",
+                    desc: "Introduction to technology, AI, computational thinking, and the builder mindset."
+                  },
+                  {
+                    week: 2,
+                    header: "WEEK 02 • 3 ONLINE DAYS",
+                    badge: "Design",
+                    badgeCls: "bg-amber-100 text-amber-900",
+                    title: "IDEATE & DESIGN",
+                    desc: "Problem identification, user personas, wireframing, and Figma prototypes."
+                  },
+                  {
+                    week: 3,
+                    header: "WEEK 03 • 3 ONLINE DAYS",
+                    badge: "Engineering",
+                    badgeCls: "bg-yellow-100 text-yellow-900",
+                    title: "BUILD & DEVELOP",
+                    desc: "Practical code, responsive layouts, AI-assisted development, and MVP progress."
+                  },
+                  {
+                    week: 4,
+                    header: "WEEK 04 • 2 ONLINE + 1 OFFLINE HACKATHON",
+                    badge: "Grand Finale",
+                    badgeCls: "bg-[#F6C900] text-[#202124] font-extrabold",
+                    title: "FINALIZE & COMPETE",
+                    desc: "Pitch preparation, team collaboration, live demo showcase, and offline hackathon day!"
+                  }
+                ].map((item) => {
+                  const isSelected = activeProgramWeek === item.week;
+                  const isDark = item.week === 4;
+                  return (
+                    <button
+                      key={item.week}
+                      type="button"
+                      onClick={() => setActiveProgramWeek(item.week)}
+                      className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer ${
+                        isDark
+                          ? isSelected
+                            ? "bg-[#121316] text-white border-[#F6C900] ring-2 ring-[#F6C900]/70 shadow-lg"
+                            : "bg-[#121316] text-white border-gray-800 shadow-md hover:border-[#F6C900]/60"
+                          : isSelected
+                          ? "bg-[#FFFDF5] border-[#F6C900] ring-2 ring-[#F6C900]/50 shadow-sm"
+                          : "bg-gray-50/80 border-gray-100 hover:border-gray-200"
+                      }`}
+                    >
+                      <div
+                        className={`flex items-center justify-between text-xs font-bold mb-1 ${
+                          isDark ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      >
+                        <span className={isDark ? "text-[#F6C900]" : ""}>{item.header}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] ${item.badgeCls}`}>
+                          {item.badge}
+                        </span>
+                      </div>
+                      <h4 className={`text-base font-extrabold ${isDark ? "text-white" : "text-[#202124]"}`}>
+                        {item.title}
+                      </h4>
+                      <p className={`text-xs mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                        {item.desc}
+                      </p>
+                    </button>
+                  );
+                })}
 
-                <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 hover:border-gray-200 transition-all">
-                  <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-1">
-                    <span>WEEK 02 • 3 ONLINE DAYS</span>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px]">Design</span>
+                {selectedProgramWeek && (
+                  <div className="mt-3 p-4 rounded-2xl bg-[#FAF8F2] border border-amber-200/80 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-amber-900">
+                        Week 0{selectedProgramWeek.weekNumber} Live Syllabus Preview
+                      </span>
+                      <Link
+                        href="/builder-program"
+                        className="text-[11px] font-bold text-[#202124] hover:underline"
+                      >
+                        Full Details →
+                      </Link>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {selectedProgramWeek.days.slice(0, 3).map((d) => (
+                        <li key={d.dayNumber} className="text-xs text-gray-700 flex items-start gap-2">
+                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-white border border-gray-200 text-[#202124] shrink-0">
+                            D{d.dayNumber}
+                          </span>
+                          <span className="font-semibold leading-snug">{d.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {selectedProgramWeek.toolsTechnologies.slice(0, 4).map((tool) => (
+                        <span
+                          key={tool}
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-gray-200 text-gray-700"
+                        >
+                          {tool}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <h4 className="text-base font-extrabold text-[#202124]">IDEATE & DESIGN</h4>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Problem identification, user personas, wireframing, and Figma prototypes.
-                  </p>
-                </div>
-
-                <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 hover:border-gray-200 transition-all">
-                  <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-1">
-                    <span>WEEK 03 • 3 ONLINE DAYS</span>
-                    <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-900 text-[10px]">Engineering</span>
-                  </div>
-                  <h4 className="text-base font-extrabold text-[#202124]">BUILD & DEVELOP</h4>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Practical code, responsive layouts, AI-assisted development, and MVP progress.
-                  </p>
-                </div>
-
-                <div className="bg-[#121316] text-white p-4 rounded-2xl border border-gray-800 shadow-md">
-                  <div className="flex items-center justify-between text-xs font-bold text-gray-400 mb-1">
-                    <span className="text-[#F6C900]">WEEK 04 • 2 ONLINE + 1 OFFLINE HACKATHON</span>
-                    <span className="px-2 py-0.5 rounded-full bg-[#F6C900] text-[#202124] font-extrabold text-[10px]">Grand Finale</span>
-                  </div>
-                  <h4 className="text-base font-extrabold text-white">FINALIZE & COMPETE</h4>
-                  <p className="text-xs text-gray-300 mt-1">
-                    Pitch preparation, team collaboration, live demo showcase, and offline hackathon day!
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -656,7 +970,8 @@ export default function HomePage() {
           SECTION 5 — ACHIEVEMENTS & OUR STORY
           ========================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-[#FAF9F5] rounded-3xl p-6 sm:p-10 border border-gray-200/70 shadow-sm">
+        <Reveal>
+          <div className="bg-[#FAF9F5] rounded-3xl p-6 sm:p-10 border border-gray-200/70 shadow-sm">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             {/* Story text */}
             <div className="lg:col-span-7 space-y-5">
@@ -781,13 +1096,15 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </Reveal>
       </section>
 
       {/* =========================================================
           SECTION 6 — FEATURED PROJECTS SHOWCASE
           ========================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200/50 text-xs font-bold uppercase tracking-wider mb-3">
@@ -871,13 +1188,15 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+        </Reveal>
       </section>
 
       {/* =========================================================
           SECTION 7 — FINAL HOMEPAGE CTA
           ========================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-r from-[#F6C900] via-[#FFD700] to-[#F6C900] rounded-3xl p-8 sm:p-14 text-center shadow-lg relative overflow-hidden">
+        <Reveal>
+          <div className="bg-gradient-to-r from-[#F6C900] via-[#FFD700] to-[#F6C900] rounded-3xl p-8 sm:p-14 text-center shadow-lg relative overflow-hidden">
           <div className="max-w-2xl mx-auto space-y-6 relative z-10">
             <span className="inline-block px-3.5 py-1 rounded-full bg-[#202124] text-white text-xs font-extrabold uppercase tracking-wider">
               Start Building Today
@@ -923,6 +1242,7 @@ export default function HomePage() {
             </p>
           </div>
         </div>
+        </Reveal>
       </section>
     </div>
   );

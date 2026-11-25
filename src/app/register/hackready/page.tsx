@@ -128,6 +128,16 @@ export default function HackreadyRegisterPage() {
       )
     : "";
 
+  const completedFieldsCount = [
+    formData.fullName.trim().length > 0,
+    formData.rollNo.trim().length > 0,
+    formData.branch.trim().length > 0,
+    formData.semester.trim().length > 0,
+    formData.email.trim().length > 0,
+    formData.phoneNumber.trim().length > 0
+  ].filter(Boolean).length;
+  const completionPercent = Math.round((completedFieldsCount / 6) * 100);
+
   return (
     <div className="py-12 sm:py-16 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Back button */}
@@ -264,17 +274,25 @@ export default function HackreadyRegisterPage() {
               </div>
             )}
 
-            {/* Program Indicator Pill */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-amber-700 shrink-0" />
-                <span className="font-extrabold text-[#202124]">
-                  Program: Hackready Workshop (College & B.Tech Registration)
+            {/* Program Indicator Pill + Completion Bar */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Terminal className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span className="font-extrabold text-[#202124]">
+                    Program: Hackready Workshop (College & B.Tech Registration)
+                  </span>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-200/80 text-amber-900 tabular-nums">
+                  {completionPercent}% Ready
                 </span>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-200/80 text-amber-900">
-                Verified Cohort
-              </span>
+              <div className="w-full h-1.5 rounded-full bg-amber-200/60 overflow-hidden">
+                <div
+                  className="h-full bg-[#202124] rounded-full transition-[width] duration-300"
+                  style={{ width: `${completionPercent}%` }}
+                />
+              </div>
             </div>
 
             {/* 1. Name & Roll No */}

@@ -64,6 +64,22 @@ var TEXT_COLUMNS_BY_SHEET = {
   "Contact Enquiries": [1]
 };
 
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("KRE8ECH Sync")
+    .addItem("Initialize / Format All Sheet Tabs", "initializeAllSheets")
+    .addToUi();
+}
+
+function initializeAllSheets() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var names = Object.keys(SHEET_SCHEMAS);
+  for (var i = 0; i < names.length; i++) {
+    var sheet = getOrCreateSheet(ss, names[i]);
+    formatColumnsSafe(sheet, SHEET_SCHEMAS[names[i]].length);
+  }
+}
+
 function doGet() {
   return jsonResponse({
     ok: true,
@@ -236,6 +252,20 @@ function appendRowSafely(sheet, sheetName, rowValues) {
     }
   }
   rowRange.setValues([rowValues]);
+  rowRange.setVerticalAlignment("middle");
+  rowRange.setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+  if (nextRow % 2 === 1) {
+    rowRange.setBackground("#FFFDF5");
+  }
+  formatColumnsSafe(sheet, rowValues.length);
+}
+
+function formatColumnsSafe(sheet, colCount) {
+  try {
+    sheet.autoResizeColumns(1, colCount);
+  } catch (_ignored) {
+    // Ignore auto-resize limits on headless executions.
+  }
 }
 
 function str(value) {

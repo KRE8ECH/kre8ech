@@ -21,14 +21,19 @@ const navLinks = [
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [isStudentLoggedIn, setIsStudentLoggedIn] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
+      const y = window.scrollY;
+      setScrolled(y > 10);
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(docHeight > 0 ? Math.min(100, Math.round((y / docHeight) * 100)) : 0);
     };
-    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     // Check login state
     const student = getStudentSession();
@@ -39,12 +44,18 @@ export default function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-200 bg-white ${
+      className={`sticky top-0 z-50 w-full transition-all duration-200 ${
         scrolled
-          ? "border-b border-gray-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.06)] py-3"
-          : "border-b border-gray-100 py-3.5 sm:py-4"
+          ? "bg-white/90 backdrop-blur-md border-b border-gray-200/70 shadow-[0_6px_24px_-6px_rgba(0,0,0,0.08)] py-3"
+          : "bg-white/95 backdrop-blur-sm border-b border-gray-100 py-3.5 sm:py-4"
       }`}
     >
+      {/* Dynamic scroll progress accent bar */}
+      <div
+        aria-hidden="true"
+        className="absolute bottom-0 left-0 h-[2px] bg-[#F6C900] transition-[width] duration-150"
+        style={{ width: `${scrollProgress}%` }}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Brand Logo & Name (Clean, crisp, authentic wings + bold KRE8ECH with bright yellow 8) */}
@@ -107,10 +118,10 @@ export default function Navbar() {
             {/* Primary CTA */}
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold px-5 py-2.5 rounded-full bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] shadow-sm hover:shadow transition-all"
+              className="group inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold px-5 py-2.5 rounded-full bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
             >
-              <span> Join KRE8ECH</span>
-              <ArrowRight className="w-6.5 h-6.5 stroke-[4.5]" />
+              <span>Join KRE8ECH</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5] transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
           </div>
 
@@ -183,7 +194,7 @@ export default function Navbar() {
               className="flex items-center justify-center gap-2 w-full py-3 rounded-full text-xs font-extrabold bg-[#F6C900] text-[#202124] shadow-sm"
             >
               <span>Join KRE8ECH</span>
-              <ArrowRight className="w-6.5 h-6.5 stroke-[4.5]" />
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </Link>
           </div>
         </div>

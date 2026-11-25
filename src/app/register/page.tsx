@@ -59,6 +59,16 @@ export default function RegisterPage() {
     });
   };
 
+  const completedStepsCount = [
+    formData.fullName.trim().length > 0,
+    formData.phoneNumber.trim().length > 0,
+    formData.email.trim().length > 0,
+    formData.schoolCollege.trim().length > 0,
+    formData.city.trim().length > 0,
+    formData.techInterests.length > 0
+  ].filter(Boolean).length;
+  const completionPercent = Math.round((completedStepsCount / 6) * 100);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -227,6 +237,20 @@ export default function RegisterPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Dynamic Form Completion Progress */}
+            <div className="p-3.5 rounded-2xl bg-[#FAF8F2] border border-gray-200/70 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-[#202124]">
+                <span className="uppercase tracking-wider text-gray-500">Application Completion</span>
+                <span className="tabular-nums font-black">{completionPercent}%</span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                <div
+                  className="h-full bg-[#F6C900] rounded-full transition-[width] duration-300"
+                  style={{ width: `${completionPercent}%` }}
+                />
+              </div>
+            </div>
+
             {error && (
               <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-2xl">
                 {error}
