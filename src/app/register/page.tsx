@@ -6,16 +6,17 @@ import Link from "next/link";
 import {
   ArrowRight,
   CheckCircle2,
+  Sparkles,
   User,
   Mail,
+  Lock,
   Building,
+  GraduationCap,
   MapPin,
   Phone,
-  Terminal,
-  FileSpreadsheet,
+  MessageSquare
 } from "lucide-react";
 import { registerStudent, setStudentSession } from "@/lib/storage";
-import { syncToGoogleSheet, SheetsSyncResult } from "@/lib/sheetsSync";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 
 const interestOptions = [
@@ -24,7 +25,7 @@ const interestOptions = [
   "Mobile Apps (Android / iOS)",
   "UI/UX Design & Prototyping",
   "Automation & Scripts",
-  "Competitive Hackathons",
+  "Competitive Hackathons"
 ];
 
 export default function RegisterPage() {
@@ -37,13 +38,12 @@ export default function RegisterPage() {
     classYear: "Class 9",
     city: "",
     techInterests: [] as string[],
-    registeredProgram: "Four-Week Builder Program Cohort 1",
+    registeredProgram: "Four-Week Builder Program Cohort 1"
   });
 
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [syncResult, setSyncResult] = useState<SheetsSyncResult | null>(null);
 
   const toggleInterest = (interest: string) => {
     setFormData((prev) => {
@@ -52,23 +52,17 @@ export default function RegisterPage() {
         ...prev,
         techInterests: exists
           ? prev.techInterests.filter((i) => i !== interest)
-          : [...prev.techInterests, interest],
+          : [...prev.techInterests, interest]
       };
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (
-      !formData.fullName.trim() ||
-      !formData.email.trim() ||
-      !formData.phoneNumber.trim() ||
-      !formData.schoolCollege.trim() ||
-      !formData.city.trim()
-    ) {
-      setError("Please complete all required fields including your contact / WhatsApp number.");
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.phoneNumber.trim() || !formData.schoolCollege.trim() || !formData.city.trim()) {
+      setError("Please fill out all required fields including your Contact / WhatsApp Number.");
       return;
     }
 
@@ -88,223 +82,218 @@ export default function RegisterPage() {
         classYear: formData.classYear,
         city: formData.city.trim(),
         techInterests: formData.techInterests,
-        registeredProgram: formData.registeredProgram,
+        registeredProgram: formData.registeredProgram
       });
 
       setStudentSession({
-        fullName: newStudent.fullName,
-        email: newStudent.email,
-        schoolCollege: newStudent.schoolCollege,
-        classYear: newStudent.classYear,
-        city: newStudent.city,
-        techInterests: newStudent.techInterests,
-        registeredProgram: newStudent.registeredProgram || "Four-Week Builder Program Cohort 1",
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        schoolCollege: formData.schoolCollege.trim(),
+        classYear: formData.classYear,
+        city: formData.city.trim(),
+        techInterests: formData.techInterests,
+        registeredProgram: formData.registeredProgram
       });
 
-      const sheetStatus = await syncToGoogleSheet("Student Registrations", { ...newStudent });
-      setSyncResult(sheetStatus);
       setIsSuccess(true);
-    } catch {
+    } catch (err) {
       setError("An unexpected error occurred. Please try again.");
-    } finally {
       setIsSubmitting(false);
     }
   };
 
   const whatsappMessage = encodeURIComponent(
-    `Hello KRE8ECH Team, I just registered for KRE8ECH:\n\n` +
-      `Name: ${formData.fullName}\n` +
-      `Phone: ${formData.phoneNumber}\n` +
-      `Email: ${formData.email}\n` +
-      `School/College: ${formData.schoolCollege}\n` +
-      `Class/Year: ${formData.classYear}\n` +
-      `City: ${formData.city}\n` +
-      `Program: ${formData.registeredProgram}\n` +
-      `Interests: ${formData.techInterests.join(", ")}`
+    `Hello KRE8ECH Team! I just registered for KRE8ECH:\n\n` +
+    `👤 Name: ${formData.fullName}\n` +
+    `📞 Phone: ${formData.phoneNumber}\n` +
+    `✉️ Email: ${formData.email}\n` +
+    `🏫 School/College: ${formData.schoolCollege}\n` +
+    `🎓 Class/Year: ${formData.classYear}\n` +
+    `📍 City: ${formData.city}\n` +
+    `🚀 Program: ${formData.registeredProgram}\n` +
+    `💡 Interests: ${formData.techInterests.join(", ")}\n\n` +
+    `Looking forward to joining the cohort!`
   );
 
   return (
-    <div className="py-12 sm:py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="bg-white border border-black/[0.08] rounded-2xl p-6 sm:p-10 shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
+    <div className="py-14 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="bg-white border border-gray-100 rounded-3xl p-6 sm:p-12 shadow-[0_8px_30px_rgba(0,0,0,0.05)]">
         {/* Header */}
-        <div className="max-w-xl mb-8 space-y-2">
-          <span className="text-xs font-medium text-[#6B7280]">Student Onboarding</span>
-          <h1 className="text-3xl sm:text-4xl font-semibold text-[#202124] tracking-tight">
+        <div className="text-center max-w-xl mx-auto mb-10 space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200/50 text-xs font-bold uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span>Student Onboarding</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl font-black text-[#202124] tracking-tight">
             Join KRE8ECH
           </h1>
-          <p className="text-sm text-[#525252] leading-relaxed">
-            Register for the Four-Week Builder Program, access problem statements, and join the upcoming cohort.
+
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Register your interest for the Four-Week Builder Program, access problem statements, and join our student community.
           </p>
         </div>
 
         {isSuccess ? (
-          <div className="py-6 space-y-6">
-            <div className="flex items-start gap-4 p-5 rounded-xl bg-[#FAF8F2] border border-black/[0.08]">
-              <CheckCircle2 className="w-6 h-6 text-[#16A34A] shrink-0 mt-0.5" strokeWidth={1.75} />
-              <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-[#202124]">
-                  Registration Confirmed
-                </h2>
-                <p className="text-sm text-[#525252]">
-                  Welcome, <strong className="text-[#202124]">{formData.fullName}</strong>. Your student profile has been recorded.
-                </p>
-                <div className="pt-1 flex items-center gap-2 text-xs">
-                  <FileSpreadsheet className="w-4 h-4 text-[#16A34A]" strokeWidth={1.75} />
-                  {syncResult?.synced ? (
-                    <span className="text-[#16A34A] font-medium">
-                      Synced directly to the KRE8ECH Google Sheet
-                    </span>
-                  ) : (
-                    <span className="text-[#6B7280]">
-                      Saved locally in this browser (configure Google Sheets webhook URL to auto-sync live)
-                    </span>
-                  )}
-                </div>
-              </div>
+          <div className="text-center py-8 space-y-6 animate-in zoom-in duration-300">
+            <div className="w-16 h-16 mx-auto rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <div className="rounded-xl bg-[#FAF8F2] border border-black/[0.08] p-5 text-xs space-y-2.5">
-              <div className="flex justify-between py-1 border-b border-black/[0.06]">
-                <span className="text-[#6B7280]">Student Name</span>
-                <span className="font-semibold text-[#202124]">{formData.fullName}</span>
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#202124]">
+                Registration Confirmed!
+              </h2>
+              <p className="text-sm text-gray-600 max-w-md mx-auto">
+                Welcome, <strong>{formData.fullName}</strong>. Your application has been logged into our records database.
+              </p>
+            </div>
+
+            {/* Registration Summary Card */}
+            <div className="max-w-md mx-auto text-left p-5 rounded-2xl bg-gray-50 border border-gray-200 text-xs space-y-2">
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500 font-semibold">Student Name:</span>
+                <span className="font-bold text-[#202124]">{formData.fullName}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-black/[0.06]">
-                <span className="text-[#6B7280]">WhatsApp / Phone</span>
-                <span className="font-semibold text-[#202124] tabular-nums">{formData.phoneNumber}</span>
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500 font-semibold">WhatsApp / Phone:</span>
+                <span className="font-bold text-[#202124]">{formData.phoneNumber}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-black/[0.06]">
-                <span className="text-[#6B7280]">Email</span>
-                <span className="font-semibold text-[#202124]">{formData.email}</span>
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500 font-semibold">Email:</span>
+                <span className="font-bold text-[#202124]">{formData.email}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-black/[0.06]">
-                <span className="text-[#6B7280]">School / City</span>
-                <span className="font-semibold text-[#202124]">{formData.schoolCollege}, {formData.city}</span>
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500 font-semibold">School / City:</span>
+                <span className="font-bold text-[#202124]">{formData.schoolCollege}, {formData.city}</span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-[#6B7280]">Program</span>
-                <span className="font-semibold text-[#202124]">{formData.registeredProgram}</span>
+                <span className="text-gray-500 font-semibold">Program:</span>
+                <span className="font-bold text-[#202124]">{formData.registeredProgram}</span>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+            {/* WhatsApp notification CTA */}
+            <div className="max-w-md mx-auto pt-2 space-y-3">
               <a
                 href={`https://wa.me/919875721958?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#25D366] hover:bg-[#20ba59] text-white font-semibold text-sm transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-sm shadow-md hover:shadow-lg transition-all"
               >
-                <WhatsAppIcon className="w-4 h-4" />
-                <span>Confirm on WhatsApp</span>
+                <WhatsAppIcon className="w-5 h-5" />
+                <span>Confirm on WhatsApp (+91 98757 21958)</span>
               </a>
 
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="px-5 py-2.5 rounded-lg bg-[#202124] hover:bg-black text-white text-sm font-medium transition-colors"
-              >
-                Go to Student Dashboard
-              </button>
-
-              <Link
-                href="/"
-                className="px-4 py-2.5 text-center text-sm font-medium text-[#525252] hover:text-[#202124]"
-              >
-                Return Home
-              </Link>
+              <div className="flex items-center justify-center gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard")}
+                  className="px-6 py-2.5 rounded-full bg-[#202124] text-white text-xs font-bold hover:bg-black transition-colors"
+                >
+                  Go to Student Dashboard
+                </button>
+                <Link
+                  href="/"
+                  className="text-xs font-bold text-gray-600 hover:text-black underline"
+                >
+                  Return to Home
+                </Link>
+              </div>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-medium rounded-lg">
+              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-2xl">
                 {error}
               </div>
             )}
 
-            {/* Name & Phone */}
+            {/* Basic Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-[#525252] mb-1.5">
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   Full Name *
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
+                  <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. Aarav Sharma"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124]"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] shadow-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#525252] mb-1.5">
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   WhatsApp / Contact Number *
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
+                  <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
                     required
                     placeholder="e.g. +91 98765 43210"
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124]"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] shadow-xs"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Email & School */}
+            {/* Email & School Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-[#525252] mb-1.5">
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   Email Address *
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
+                  <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
                     placeholder="e.g. aarav@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124]"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] shadow-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#525252] mb-1.5">
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   School / College Name *
                 </label>
                 <div className="relative">
-                  <Building className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
+                  <Building className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. Delhi Public School"
                     value={formData.schoolCollege}
                     onChange={(e) => setFormData({ ...formData, schoolCollege: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124]"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] shadow-xs"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Class, City, Program */}
+            {/* School & Class Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-[#525252] mb-1.5">
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   Class / Year *
                 </label>
                 <select
                   value={formData.classYear}
                   onChange={(e) => setFormData({ ...formData, classYear: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124] bg-white"
+                  className="w-full px-3 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] bg-white shadow-xs"
                 >
                   <option value="Class 9">Class 9</option>
                   <option value="Class 10">Class 10</option>
@@ -316,43 +305,43 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#525252] mb-1.5">
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   City *
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" strokeWidth={1.75} />
+                  <MapPin className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. New Delhi"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124]"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] shadow-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#525252] mb-1.5">
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">
                   Select Program *
                 </label>
                 <select
                   value={formData.registeredProgram}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val === "Hackready Workshop") {
+                    if (val === "HackReady Workshop" || val === "Hackready Workshop") {
                       router.push("/register/hackready");
                       return;
                     }
                     setFormData({ ...formData, registeredProgram: val });
                   }}
-                  className="w-full px-3 py-2.5 rounded-lg border border-black/[0.12] text-sm focus:outline-none focus:border-[#202124] bg-white font-medium text-[#202124]"
+                  className="w-full px-3 py-2.5 rounded-2xl border border-gray-200 text-sm focus:outline-none focus:border-[#202124] bg-white shadow-xs font-semibold text-gray-800"
                 >
                   <option value="Four-Week Builder Program Cohort 1">
                     Four-Week Builder Program (Cohort 1)
                   </option>
-                  <option value="Hackready Workshop">
-                    Hackready Workshop (College &amp; Branch)
+                  <option value="HackReady Workshop">
+                    ⚡ Hackready Workshop (College & Branch Registration)
                   </option>
                   <option value="Offline Hackathon Showcase 2026">
                     KRE8ECH Grand Offline Hackathon 2026
@@ -364,27 +353,27 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* College Hackready Switcher */}
-            <div className="p-4 rounded-xl bg-[#FAF8F2] border border-black/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2 text-[#202124] font-medium">
-                <Terminal className="w-4 h-4 text-[#525252] shrink-0" strokeWidth={1.75} />
+            {/* Quick banner for Hackready Workshop */}
+            <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-amber-950 font-bold">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>
-                  Registering for the <strong>Hackready Workshop</strong> (College &amp; B.Tech)?
+                  Registering for <strong>Hackready Workshop</strong> (College & B.Tech)?
                 </span>
               </div>
               <Link
                 href="/register/hackready"
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#202124] hover:bg-black text-white font-medium text-xs transition-colors shrink-0"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-[#202124] hover:bg-black text-[#F6C900] font-black text-xs transition-colors shrink-0 shadow-xs"
               >
                 <span>Open Hackready Form</span>
-                <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+                <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
               </Link>
             </div>
 
-            {/* Technology Interests */}
+            {/* Technology Interests Multi-Select */}
             <div>
-              <label className="block text-xs font-medium text-[#525252] mb-2">
-                Technology areas you want to build with *
+              <label className="block text-xs font-bold uppercase text-gray-500 mb-2">
+                What technologies are you most excited to learn and build? *
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {interestOptions.map((opt) => {
@@ -394,25 +383,25 @@ export default function RegisterPage() {
                       key={opt}
                       type="button"
                       onClick={() => toggleInterest(opt)}
-                      className={`p-3 rounded-lg text-left text-xs font-medium border transition-colors flex items-center justify-between ${
+                      className={`p-3 rounded-2xl text-left text-xs font-semibold border transition-all flex items-center justify-between ${
                         isChecked
-                          ? "bg-[#FFF9E8] border-[#F6C900] text-[#202124]"
-                          : "bg-white border-black/[0.08] text-[#525252] hover:bg-[#FAF8F2]"
+                          ? "bg-amber-50/80 border-amber-300 text-amber-950 font-bold shadow-xs"
+                          : "bg-white border-gray-200/80 text-gray-600 hover:border-gray-300"
                       }`}
                     >
                       <span>{opt}</span>
-                      {isChecked && <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" strokeWidth={1.75} />}
+                      {isChecked && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Submit Bar */}
-            <div className="pt-4 border-t border-black/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-xs text-[#6B7280]">
+            {/* Submit CTA */}
+            <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-gray-500">
                 Already registered?{" "}
-                <Link href="/login" className="font-semibold text-[#202124] hover:underline">
+                <Link href="/login" className="font-bold text-[#202124] hover:underline">
                   Log in to your Dashboard
                 </Link>
               </p>
@@ -420,10 +409,10 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-semibold text-sm transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-extrabold text-sm shadow-sm hover:shadow transition-all disabled:opacity-50"
               >
-                <span>{isSubmitting ? "Submitting..." : "Complete Registration"}</span>
-                <ArrowRight className="w-4 h-4" strokeWidth={2} />
+                <span>{isSubmitting ? "Creating Account..." : "Complete Registration"}</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
           </form>

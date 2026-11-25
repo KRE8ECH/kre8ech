@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 
+// =========================================================================
+// 1. ANIMATED LAPTOP: ONLY RUNS CODE ON CLICK!
+// =========================================================================
 export const AnimatedLaptop: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [activeLine, setActiveLine] = useState(0);
@@ -10,23 +13,28 @@ export const AnimatedLaptop: React.FC = () => {
     { text: "const student = new Kre8ech();", color: "text-amber-300" },
     { text: "await student.learn('AI + Web');", color: "text-sky-300" },
     { text: "const app = await student.build();", color: "text-emerald-300" },
-    { text: "app.deploy('Saksham Hackathon');", color: "text-purple-300" },
-    { text: "> [OK] Prototype Live in 18ms", color: "text-[#F6C900]" },
+    { text: "app.deploy('Saksham Hackathon 🏆');", color: "text-purple-300" },
+    { text: "> [OK] Prototype Live in 18ms ✨", color: "text-[#F6C900]" }
   ];
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
+    let interval: NodeJS.Timeout;
     if (isRunning) {
       interval = setInterval(() => {
-        setActiveLine((prev) => (prev >= codeLines.length - 1 ? 0 : prev + 1));
-      }, 1100);
+        setActiveLine((prev) => {
+          if (prev >= codeLines.length - 1) {
+            return 0;
+          }
+          return prev + 1;
+        });
+      }, 1200);
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [isRunning, codeLines.length]);
 
-  const handleToggle = () => setIsRunning((prev) => !prev);
+  const handleToggle = () => {
+    setIsRunning((prev) => !prev);
+  };
 
   return (
     <div
@@ -34,41 +42,44 @@ export const AnimatedLaptop: React.FC = () => {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && handleToggle()}
-      className="cursor-pointer select-none active:scale-[0.98] transition-transform duration-150"
-      title="Click to run live code"
+      className="group relative cursor-pointer select-none transition-all duration-200 active:scale-95"
+      title="Click to run live code!"
     >
-      <div className="p-3.5 rounded-xl bg-white border border-black/[0.08] hover:border-[#202124]/30 transition-colors w-60 sm:w-64">
-        <div className="bg-[#1E1F22] rounded-t-lg px-3 py-1.5 flex items-center justify-between border-b border-gray-800">
+      <div className="relative p-3.5 rounded-2xl bg-white border border-gray-200/80 shadow-[0_4px_18px_rgba(0,0,0,0.04)] hover:border-amber-400 hover:shadow-md transition-all w-60 sm:w-64">
+        {/* Top Window Bar */}
+        <div className="bg-[#1E1F22] rounded-t-xl px-3 py-1.5 flex items-center justify-between border-b border-gray-800">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#FF5F56]" />
             <span className="w-2 h-2 rounded-full bg-[#FFBD2E]" />
             <span className="w-2 h-2 rounded-full bg-[#27C93F]" />
           </div>
           <div className="flex items-center gap-1 text-[10px] font-mono text-gray-400">
-            <span className={`w-1.5 h-1.5 rounded-full ${isRunning ? "bg-emerald-400" : "bg-gray-500"}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${isRunning ? "bg-emerald-400 animate-pulse" : "bg-gray-500"}`} />
             <span>builder.ts</span>
           </div>
         </div>
 
-        <div className="bg-[#141415] p-2.5 font-mono text-[10px] leading-relaxed space-y-1 h-24 overflow-hidden">
+        {/* Screen Content */}
+        <div className="bg-[#121316] p-2.5 font-mono text-[10px] leading-relaxed space-y-1 h-24 overflow-hidden relative">
           {!isRunning ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 space-y-1">
-              <p className="text-[11px] font-semibold text-gray-200">Click to Run Code</p>
-              <p className="text-[10px] text-gray-500">Live student execution</p>
+              <span className="text-[#F6C900] text-sm">▶</span>
+              <p className="text-[11px] font-bold text-gray-200">Click to Run Code</p>
+              <p className="text-[9px] text-gray-500">Live student code execution</p>
             </div>
           ) : (
             codeLines.map((line, idx) => (
               <div
                 key={idx}
-                className={`flex items-center gap-1.5 transition-opacity duration-150 ${
+                className={`transition-all duration-200 flex items-center gap-1.5 ${
                   idx === activeLine
-                    ? `${line.color} font-semibold`
+                    ? `${line.color} font-bold translate-x-0.5`
                     : idx < activeLine
                     ? "text-gray-400 opacity-70"
                     : "text-gray-600 opacity-30"
                 }`}
               >
-                <span className="text-[9px] text-gray-600 select-none tabular-nums">0{idx + 1}</span>
+                <span className="text-[9px] text-gray-600 select-none">0{idx + 1}</span>
                 <span className="truncate">{line.text}</span>
                 {idx === activeLine && (
                   <span className="inline-block w-1.5 h-3 bg-[#F6C900] animate-cursor-blink ml-0.5" />
@@ -78,19 +89,19 @@ export const AnimatedLaptop: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-[#E2E2E6] h-2.5 rounded-b-lg border-t border-[#D1D1D6] flex items-center justify-center">
+        {/* Laptop Keyboard Base */}
+        <div className="bg-[#E2E2E6] h-3 rounded-b-xl border-t border-[#D1D1D6] relative flex items-center justify-center shadow-inner">
           <div className="w-10 h-1 bg-[#B0B0B8] rounded-full" />
         </div>
 
-        <div className="mt-2.5 text-center">
-          <span
-            className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
-              isRunning
-                ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                : "bg-[#FAF8F2] text-[#202124] border-black/[0.08]"
-            }`}
-          >
-            {isRunning ? "Running (Click to Pause)" : "Run Code"}
+        {/* Bottom Interactive Click Pill */}
+        <div className="mt-2.5 flex items-center justify-center">
+          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
+            isRunning 
+              ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+              : "bg-[#FFF9E8] text-[#202124] border-[#F6C900]"
+          }`}>
+            {isRunning ? "● Running (Click to Pause)" : "▶ Click to Run Code"}
           </span>
         </div>
       </div>
@@ -98,60 +109,88 @@ export const AnimatedLaptop: React.FC = () => {
   );
 };
 
+// =========================================================================
+// 2. INTERACTIVE LIGHTBULB: ONLY TOGGLES ON CLICK!
+// =========================================================================
 export const InteractiveBulb: React.FC = () => {
-  const [isLit, setIsLit] = useState(false);
+  const [isOn, setIsOn] = useState(false);
+
+  const toggleBulb = () => {
+    setIsOn((prev) => !prev);
+  };
 
   return (
     <div
-      onClick={() => setIsLit((prev) => !prev)}
+      onClick={toggleBulb}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && setIsLit((prev) => !prev)}
-      className="cursor-pointer select-none active:scale-[0.98] transition-transform duration-150"
-      title="Click to toggle ideation bulb"
+      onKeyDown={(e) => e.key === "Enter" && toggleBulb()}
+      className="group relative cursor-pointer select-none transition-transform duration-200 active:scale-95"
+      title={`Click to turn bulb ${isOn ? "OFF" : "ON"}!`}
     >
       <div
-        className={`p-3.5 rounded-xl border transition-colors flex flex-col items-center justify-center w-36 sm:w-44 text-center ${
-          isLit ? "bg-[#FFFDF5] border-[#F6C900]" : "bg-white border-black/[0.08] hover:border-[#202124]/30"
+        className={`relative p-3.5 rounded-2xl transition-all duration-300 border flex flex-col items-center justify-center w-36 sm:w-44 text-center ${
+          isOn
+            ? "bg-amber-50/90 border-[#F6C900] shadow-[0_0_24px_rgba(246,201,0,0.35)]"
+            : "bg-white border-gray-200/80 shadow-[0_4px_18px_rgba(0,0,0,0.04)] hover:border-amber-300"
         }`}
       >
-        <div className={`transition-transform duration-200 ${isLit ? "scale-105 animate-bulb-glow" : ""}`}>
-          <svg width={56} height={56} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {isLit && (
-              <g stroke="#F6C900" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="50" y1="8" x2="50" y2="15" />
-                <line x1="25" y1="18" x2="30" y2="23" />
-                <line x1="75" y1="18" x2="70" y2="23" />
-                <line x1="14" y1="42" x2="21" y2="42" />
-                <line x1="86" y1="42" x2="79" y2="42" />
-              </g>
-            )}
-            <path
-              d="M50 22C36 22 26 32 26 45C26 53 31 60 36 66C38 69 39 73 39 77H61C61 73 62 69 64 66C69 60 74 53 74 45C74 32 64 22 50 22Z"
-              fill={isLit ? "#F6C900" : "#F3F4F6"}
-              stroke="#D1D5DB"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M42 54C42 46 47 40 50 40C53 40 58 46 58 54"
-              stroke={isLit ? "#FFFFFF" : "#9CA3AF"}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-            <rect x="41" y="77" width="18" height="4" rx="1.5" fill="#202124" />
-            <rect x="43" y="83" width="14" height="3.5" rx="1.5" fill="#4B5563" />
-          </svg>
-        </div>
+        <svg
+          width={54}
+          height={54}
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`transition-all duration-300 ${isOn ? "animate-bulb-glow scale-105" : "scale-100 opacity-60"}`}
+        >
+          {/* Light Rays - ONLY VISIBLE WHEN CLICKED ON */}
+          {isOn && (
+            <g className="transition-opacity duration-300">
+              <line x1="50" y1="8" x2="50" y2="16" stroke="#F6C900" strokeWidth="3" strokeLinecap="round" />
+              <line x1="22" y1="22" x2="28" y2="28" stroke="#F6C900" strokeWidth="3" strokeLinecap="round" />
+              <line x1="78" y1="22" x2="72" y2="28" stroke="#F6C900" strokeWidth="3" strokeLinecap="round" />
+              <line x1="12" y1="46" x2="20" y2="46" stroke="#F6C900" strokeWidth="3" strokeLinecap="round" />
+              <line x1="88" y1="46" x2="80" y2="46" stroke="#F6C900" strokeWidth="3" strokeLinecap="round" />
+            </g>
+          )}
 
+          {/* Bulb Glass */}
+          <path
+            d="M34 54C28 48 26 41 28 34C30 23 40 19 50 19C60 19 70 23 72 34C74 41 72 48 66 54L62 66H38L34 54Z"
+            fill={isOn ? "#F6C900" : "#E5E7EB"}
+            className="transition-colors duration-300"
+          />
+          <path
+            d="M38 52C34 47 33 42 34 36C36 26 44 23 50 23C56 23 64 26 66 36C67 42 66 47 62 52L59 63H41L38 52Z"
+            fill={isOn ? "#FFDF43" : "#F3F4F6"}
+            className="transition-colors duration-300"
+          />
+
+          {/* Filament */}
+          <path
+            d="M44 44C44 40 47 37 50 37C53 37 56 40 56 44V60M44 60H56"
+            stroke={isOn ? "#202124" : "#9CA3AF"}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            className="transition-colors duration-300"
+          />
+
+          {/* Base */}
+          <rect x="40" y="66" width="20" height="5" rx="1.5" fill={isOn ? "#E2E2E6" : "#D1D5DB"} />
+          <rect x="42" y="72" width="16" height="4" rx="1.5" fill="#202124" />
+          <path d="M45 76H55C55 79 45 79 45 76Z" fill="#202124" />
+        </svg>
+
+        {/* Action Prompt Pill */}
         <div className="mt-2.5">
           <span
-            className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
-              isLit
-                ? "bg-[#202124] text-[#F6C900] border-[#202124]"
-                : "bg-[#FAF8F2] text-[#202124] border-black/[0.08]"
+            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all ${
+              isOn
+                ? "bg-[#FFF9E8] text-[#202124] border-[#F6C900]"
+                : "bg-gray-100 text-gray-700 border-gray-200"
             }`}
           >
-            {isLit ? "Ideation Active" : "Spark Idea"}
+            {isOn ? "💡 Idea Sparked! (Click Off)" : "🌙 Click to Turn ON"}
           </span>
         </div>
       </div>
@@ -159,13 +198,19 @@ export const InteractiveBulb: React.FC = () => {
   );
 };
 
+// =========================================================================
+// 3. ANIMATED ROCKET: ONLY FIRES AND ORBITS ON CLICK (STRICTLY CONTAINED)!
+// =========================================================================
 export const AnimatedRocket: React.FC = () => {
   const [isFiring, setIsFiring] = useState(false);
 
   const handleLaunch = () => {
     if (isFiring) return;
     setIsFiring(true);
-    setTimeout(() => setIsFiring(false), 3600);
+    // Smooth contained launch flight for 4.2 seconds, then docks cleanly back
+    setTimeout(() => {
+      setIsFiring(false);
+    }, 4200);
   };
 
   return (
@@ -174,49 +219,70 @@ export const AnimatedRocket: React.FC = () => {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && handleLaunch()}
-      className="cursor-pointer select-none active:scale-[0.98] transition-transform duration-150"
-      title="Click to launch prototype"
+      className="group relative cursor-pointer select-none transition-transform duration-200 active:scale-95"
+      title="Click to launch rocket on curved orbit!"
     >
       <div
-        className={`p-3.5 rounded-xl border transition-colors flex flex-col items-center justify-center w-36 sm:w-44 text-center overflow-hidden ${
-          isFiring ? "bg-[#FFFDF5] border-[#F6C900]" : "bg-white border-black/[0.08] hover:border-[#202124]/30"
+        className={`relative p-3.5 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center w-36 sm:w-44 text-center overflow-hidden ${
+          isFiring
+            ? "bg-amber-50/90 border-[#F6C900] shadow-[0_0_24px_rgba(246,201,0,0.35)]"
+            : "bg-white border-gray-200/80 shadow-[0_4px_18px_rgba(0,0,0,0.04)] hover:border-amber-300"
         }`}
       >
-        <div className={isFiring ? "animate-rocket-curve" : ""}>
-          <svg width={56} height={56} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div className={`transition-transform duration-500 ${isFiring ? "animate-rocket-curve" : "transform translate-y-0"}`}>
+          <svg
+            width={58}
+            height={70}
+            viewBox="0 0 100 110"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* THRUSHTER FIRE - ONLY ANIMATES WHEN CLICKED! */}
+            {isFiring && (
+              <g className="animate-flame">
+                <path d="M42 74C42 74 38 92 50 104C62 92 58 74 58 74H42Z" fill="#FF6A00" />
+                <path d="M45 74C45 74 43 88 50 96C57 88 55 74 55 74H45Z" fill="#F6C900" />
+                <circle cx="50" cy="80" r="3" fill="#FFFFFF" />
+              </g>
+            )}
+
+            {/* Spark Particles during flight */}
             {isFiring && (
               <>
-                <g className="animate-flame">
-                  <path d="M43 74C43 74 47 92 50 94C53 92 57 74 57 74H43Z" fill="#F6C900" />
-                  <path d="M46 74C46 74 49 86 50 88C51 86 54 74 54 74H46Z" fill="#FF6B00" />
-                </g>
-                <circle cx="44" cy="82" r="2" fill="#F6C900" className="animate-spark-1" />
-                <circle cx="56" cy="85" r="1.5" fill="#FF6B00" className="animate-spark-2" />
+                <circle cx="48" cy="98" r="2" fill="#FF9900" className="animate-spark-1" />
+                <circle cx="53" cy="102" r="1.5" fill="#F6C900" className="animate-spark-2" />
               </>
             )}
-            <path d="M36 62L24 72L32 76L38 68Z" fill="#F6C900" />
-            <path d="M64 62L76 72L68 76L62 68Z" fill="#F6C900" />
+
+            {/* Fins */}
+            <path d="M34 56L22 68C21 69.5 22 72 24 72H38L35 56H34Z" fill="#202124" />
+            <path d="M66 56L78 68C79 69.5 78 72 76 72H62L65 56H66Z" fill="#202124" />
+
+            {/* Fuselage */}
             <path
-              d="M50 18C38 30 35 48 36 68C36 72 42 74 50 74C58 74 64 72 64 68C65 48 62 30 50 18Z"
+              d="M50 14C37 28 37 54 37 70H63C63 54 63 28 50 14Z"
               fill="#FFFFFF"
               stroke="#D1D5DB"
               strokeWidth="1.5"
             />
-            <path d="M50 18C45 23 42 29 41 34H59C58 29 55 23 50 18Z" fill="#202124" />
-            <circle cx="50" cy="46" r="7" fill="#202124" stroke="#E5E7EB" strokeWidth="2" />
-            <circle cx="50" cy="46" r="3.5" fill="#F6C900" />
+            {/* Nose Tip */}
+            <path d="M50 14C45 21 41 28 40 34H60C59 28 55 21 50 14Z" fill="#F6C900" />
+            {/* Porthole */}
+            <circle cx="50" cy="46" r="8" fill="#FFFDF8" stroke="#202124" strokeWidth="2" />
+            <circle cx="50" cy="46" r="4" fill="#F6C900" />
           </svg>
         </div>
 
+        {/* Action Prompt Pill */}
         <div className="mt-2.5">
           <span
-            className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
+            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
               isFiring
-                ? "bg-[#202124] text-[#F6C900] border-[#202124]"
-                : "bg-[#FAF8F2] text-[#202124] border-black/[0.08]"
+                ? "bg-amber-100 text-amber-900 border-amber-300"
+                : "bg-[#FFF9E8] text-[#202124] border-[#F6C900]"
             }`}
           >
-            {isFiring ? "Launched" : "Launch Build"}
+            {isFiring ? "🚀 Orbiting (4s)!" : "🚀 Click to Launch"}
           </span>
         </div>
       </div>
@@ -224,13 +290,19 @@ export const AnimatedRocket: React.FC = () => {
   );
 };
 
+// =========================================================================
+// 4. ANIMATED ROBOT: ONLY WAVES HAND "HYY!" ON CLICK!
+// =========================================================================
 export const AnimatedRobot: React.FC = () => {
   const [isWaving, setIsWaving] = useState(false);
 
   const handleWave = () => {
     if (isWaving) return;
     setIsWaving(true);
-    setTimeout(() => setIsWaving(false), 3600);
+    // Waves for 4 seconds on click, then settles
+    setTimeout(() => {
+      setIsWaving(false);
+    }, 4000);
   };
 
   return (
@@ -239,27 +311,77 @@ export const AnimatedRobot: React.FC = () => {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && handleWave()}
-      className="cursor-pointer select-none active:scale-[0.98] transition-transform duration-150"
-      title="Click to test AI companion"
+      className="group relative cursor-pointer select-none transition-transform duration-200 active:scale-95"
+      title="Click robot to wave Hyy!"
     >
       <div
-        className={`relative p-3.5 rounded-xl border transition-colors flex flex-col items-center justify-center w-36 sm:w-44 text-center ${
-          isWaving ? "bg-[#FFFDF5] border-[#F6C900]" : "bg-white border-black/[0.08] hover:border-[#202124]/30"
+        className={`relative p-3.5 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center w-36 sm:w-44 text-center ${
+          isWaving
+            ? "bg-amber-50/90 border-[#F6C900] shadow-[0_0_24px_rgba(246,201,0,0.35)]"
+            : "bg-white border-gray-200/80 shadow-[0_4px_18px_rgba(0,0,0,0.04)] hover:border-amber-300"
         }`}
       >
-        <svg width={56} height={56} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Internal Mini Speech Bubble during wave */}
+        {isWaving && (
+          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#121316] text-[#F6C900] px-2 py-0.5 rounded-full text-[9px] font-black shadow-md border border-gray-800 z-10 animate-bounce">
+            👋 Hyy Builder!
+          </div>
+        )}
+
+        <svg
+          width={56}
+          height={56}
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="mt-1"
+        >
+          {/* Antenna */}
           <line x1="50" y1="14" x2="50" y2="25" stroke="#202124" strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="50" cy="12" r="4.5" fill="#F6C900" />
-          <rect x="24" y="25" width="52" height="42" rx="12" fill="#FFFFFF" stroke="#D1D5DB" strokeWidth="1.5" />
+          <circle cx="50" cy="12" r="4.5" fill="#F6C900" className={isWaving ? "animate-pulse" : ""} />
+
+          {/* Head */}
+          <rect
+            x="24"
+            y="25"
+            width="52"
+            height="42"
+            rx="12"
+            fill="#FFFFFF"
+            stroke="#D1D5DB"
+            strokeWidth="1.5"
+          />
+
+          {/* Eye Screen */}
           <rect x="30" y="33" width="40" height="18" rx="6" fill="#202124" />
+
+          {/* Eyes - BLINK ONLY WHEN WAVING */}
           <g className={isWaving ? "animate-blink-eyes" : ""}>
             <circle cx="39" cy="42" r="3.5" fill="#F6C900" />
             <circle cx="61" cy="42" r="3.5" fill="#F6C900" />
           </g>
-          <path d="M42 56C42 56 46 59 50 59C54 59 58 56 58 56" stroke="#202124" strokeWidth="2" strokeLinecap="round" />
-          <path d="M28 78C28 73 34 71 42 71H58C66 71 72 73 72 78V84H28V78Z" fill="#F3F4F6" stroke="#D1D5DB" strokeWidth="1.5" />
+
+          {/* Smile */}
+          <path
+            d="M42 56C42 56 46 59 50 59C54 59 58 56 58 56"
+            stroke="#202124"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+
+          {/* Shoulders */}
+          <path
+            d="M28 78C28 73 34 71 42 71H58C66 71 72 73 72 78V84H28V78Z"
+            fill="#F6F6F8"
+            stroke="#E0E0E6"
+            strokeWidth="1.5"
+          />
+
+          {/* Left Static Arm */}
           <path d="M24 74C20 76 18 80 18 86" stroke="#202124" strokeWidth="3.5" strokeLinecap="round" />
           <circle cx="18" cy="87" r="3" fill="#F6C900" />
+
+          {/* RIGHT ARM & HAND - ONLY WAVES ON CLICK! */}
           <g className={isWaving ? "animate-wave-hand" : ""}>
             <path
               d={isWaving ? "M72 74C78 68 82 58 84 50" : "M76 74C80 76 82 80 82 86"}
@@ -267,19 +389,27 @@ export const AnimatedRobot: React.FC = () => {
               strokeWidth="3.5"
               strokeLinecap="round"
             />
-            <circle cx={isWaving ? 84 : 82} cy={isWaving ? 48 : 87} r={3} fill="#F6C900" />
+            <circle
+              cx={isWaving ? 84 : 82}
+              cy={isWaving ? 48 : 87}
+              r={isWaving ? 4 : 3}
+              fill="#F6C900"
+              stroke={isWaving ? "#202124" : "none"}
+              strokeWidth={1}
+            />
           </g>
         </svg>
 
+        {/* Action Prompt Pill */}
         <div className="mt-2.5">
           <span
-            className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
+            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
               isWaving
-                ? "bg-[#202124] text-[#F6C900] border-[#202124]"
-                : "bg-[#FAF8F2] text-[#202124] border-black/[0.08]"
+                ? "bg-[#121316] text-[#F6C900] border-gray-800"
+                : "bg-[#FFF9E8] text-[#202124] border-[#F6C900]"
             }`}
           >
-            {isWaving ? "AI Agent Active" : "Ping Companion"}
+            {isWaving ? "👋 Waving Hyy!" : "🤖 Click to Say Hyy"}
           </span>
         </div>
       </div>
