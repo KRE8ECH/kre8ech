@@ -28,6 +28,7 @@ import {
   getProblemStatements,
   StudentSession
 } from "@/lib/storage";
+import { signOutGoogleSession } from "@/lib/googleAuth";
 import { Announcement, ProgramOverview, ProblemStatement } from "@/types";
 
 export default function StudentDashboardPage() {
@@ -60,6 +61,7 @@ export default function StudentDashboardPage() {
   }, []);
 
   const handleLogout = () => {
+    signOutGoogleSession();
     setStudentSession(null);
     router.push("/");
   };
@@ -71,13 +73,26 @@ export default function StudentDashboardPage() {
       {/* Top Welcome Bar */}
       <div className="bg-[#FAF9F5] rounded-3xl p-6 sm:p-10 border border-gray-200/70 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {student.avatarUrl && (
+              <img
+                src={student.avatarUrl}
+                alt={student.fullName}
+                referrerPolicy="no-referrer"
+                className="w-7 h-7 rounded-full border border-gray-300"
+              />
+            )}
             <span className="px-3 py-1 rounded-full bg-white border border-gray-200 text-gray-700 text-xs font-semibold uppercase tracking-wider">
               Student Dashboard
             </span>
             <span className="text-xs font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
               Active Cohort 1
             </span>
+            {student.authProvider === "google" && (
+              <span className="text-[11px] font-bold text-sky-800 bg-sky-50 border border-sky-200 px-2.5 py-0.5 rounded-full">
+                Google Verified
+              </span>
+            )}
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-black text-[#202124]">

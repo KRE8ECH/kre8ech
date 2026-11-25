@@ -253,6 +253,8 @@ export interface StudentSession {
   city: string;
   techInterests: string[];
   registeredProgram: string;
+  avatarUrl?: string;
+  authProvider?: "google" | "email" | "demo";
 }
 
 export const getStudentSession = (): StudentSession | null => {
@@ -261,6 +263,9 @@ export const getStudentSession = (): StudentSession | null => {
 
 export const setStudentSession = (session: StudentSession | null): void => {
   setLocalData(KEYS.STUDENT_USER, session);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("kre8ech-session-change"));
+  }
 };
 
 // Admin Auth State (session-scoped so closing the tab locks access)

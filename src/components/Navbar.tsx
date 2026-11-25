@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight, UserCheck } from "lucide-react";
-import { getStudentSession } from "@/lib/storage";
+import { getStudentSession, StudentSession } from "@/lib/storage";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -22,8 +22,9 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [isStudentLoggedIn, setIsStudentLoggedIn] = useState(false);
+  const [studentSession, setStudentSessionState] = useState<StudentSession | null>(null);
   const pathname = usePathname();
+  const isStudentLoggedIn = Boolean(studentSession);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,14 +33,20 @@ export default function Navbar() {
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
       setScrollProgress(docHeight > 0 ? Math.min(100, Math.round((y / docHeight) * 100)) : 0);
     };
+    const syncSession = () => {
+      setStudentSessionState(getStudentSession());
+    };
     handleScroll();
+    syncSession();
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("kre8ech-session-change", syncSession);
+    window.addEventListener("storage", syncSession);
 
-    // Check login state
-    const student = getStudentSession();
-    setIsStudentLoggedIn(!!student);
-
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("kre8ech-session-change", syncSession);
+      window.removeEventListener("storage", syncSession);
+    };
   }, [pathname]);
 
   return (
@@ -103,7 +110,16 @@ export default function Navbar() {
                 href="/dashboard"
                 className="flex items-center gap-1.5 text-xs sm:text-sm font-bold px-4 py-2 rounded-full text-gray-800 bg-[#FFF9E8] border border-[#F6C900]/50 hover:bg-[#FEF2B8] transition-colors"
               >
-                <UserCheck className="w-4 h-4 text-[#202124]" />
+                {studentSession?.avatarUrl ? (
+                  <img
+                    src={studentSession.avatarUrl}
+                    alt={studentSession.fullName}
+                    referrerPolicy="no-referrer"
+                    className="w-5 h-5 rounded-full border border-amber-300"
+                  />
+                ) : (
+                  <UserCheck className="w-4 h-4 text-[#202124]" />
+                )}
                 <span>Dashboard</span>
               </Link>
             ) : (

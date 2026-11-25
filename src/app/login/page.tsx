@@ -4,46 +4,90 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, ArrowRight, UserCheck } from "lucide-react";
-import { setStudentSession, getStudentRegistrations } from "@/lib/storage";
+import {
+  setStudentSession,
+  getStudentRegistrations,
+  getHackreadyRegistrations
+} from "@/lib/storage";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { GoogleUserProfile } from "@/lib/googleAuth";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
 
+  const createSessionFromEmail = (
+    targetEmail: string,
+    provider: "google" | "email",
+    googleProfile?: GoogleUserProfile
+  ) => {
+    const cleanEmail = targetEmail.trim();
+    const normalized = cleanEmail.toLowerCase();
+
+    const generalMatch = getStudentRegistrations().find(
+      (r) => r.email.toLowerCase() === normalized
+    );
+    const hackreadyMatch = getHackreadyRegistrations().find(
+      (r) => r.email.toLowerCase() === normalized
+    );
+
+    if (generalMatch) {
+      setStudentSession({
+        fullName: generalMatch.fullName,
+        email: generalMatch.email,
+        schoolCollege: generalMatch.schoolCollege,
+        classYear: generalMatch.classYear,
+        city: generalMatch.city,
+        techInterests: generalMatch.techInterests,
+        registeredProgram:
+          generalMatch.registeredProgram || "Four-Week Builder Program Cohort 1",
+        avatarUrl: googleProfile?.picture,
+        authProvider: provider
+      });
+    } else if (hackreadyMatch) {
+      setStudentSession({
+        fullName: hackreadyMatch.fullName,
+        email: hackreadyMatch.email,
+        schoolCollege: `${hackreadyMatch.branch} (${hackreadyMatch.semester})`,
+        classYear: hackreadyMatch.semester,
+        city: hackreadyMatch.collegeName || "College Campus",
+        techInterests: ["Hackready Workshop", "Hackathon Preparation"],
+        registeredProgram: "Hackready Workshop",
+        avatarUrl: googleProfile?.picture,
+        authProvider: provider
+      });
+    } else {
+      setStudentSession({
+        fullName:
+          googleProfile?.name || cleanEmail.split("@")[0].replace(/[._]/g, " "),
+        email: cleanEmail,
+        schoolCollege: "KRE8ECH Student Member",
+        classYear: "Builder Cohort",
+        city: "India",
+        techInterests: ["Artificial Intelligence & LLMs", "Web Development"],
+        registeredProgram: "Four-Week Builder Program",
+        avatarUrl: googleProfile?.picture,
+        authProvider: provider
+      });
+    }
+
+    router.push("/dashboard");
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
+    setError("");
+    if (!email.trim()) {
       setError("Please enter your registered email address.");
       return;
     }
+    createSessionFromEmail(email, "email");
+  };
 
-    const registrations = getStudentRegistrations();
-    const found = registrations.find((r) => r.email.toLowerCase() === email.toLowerCase());
-
-    if (found) {
-      setStudentSession({
-        fullName: found.fullName,
-        email: found.email,
-        schoolCollege: found.schoolCollege,
-        classYear: found.classYear,
-        city: found.city,
-        techInterests: found.techInterests,
-        registeredProgram: found.registeredProgram || "Four-Week Builder Program Cohort 1"
-      });
-      router.push("/dashboard");
-    } else {
-      setStudentSession({
-        fullName: email.split("@")[0].replace(".", " ").toUpperCase(),
-        email: email,
-        schoolCollege: "National Public School",
-        classYear: "Class 10",
-        city: "Delhi NCR",
-        techInterests: ["AI & Machine Learning", "Web Development"],
-        registeredProgram: "Four-Week Builder Program Cohort 1"
-      });
-      router.push("/dashboard");
-    }
+  const handleGoogleSuccess = (profile: GoogleUserProfile) => {
+    setError("");
+    createSessionFromEmail(profile.email, "google", profile);
   };
 
   const handleQuickDemo = () => {
@@ -54,7 +98,8 @@ export default function LoginPage() {
       classYear: "Class 10",
       city: "New Delhi",
       techInterests: ["AI & Machine Learning", "Web Development", "UI/UX Prototyping"],
-      registeredProgram: "Four-Week Builder Program Cohort 1"
+      registeredProgram: "Four-Week Builder Program Cohort 1",
+      authProvider: "demo"
     });
     router.push("/dashboard");
   };
@@ -77,6 +122,20 @@ export default function LoginPage() {
             {error}
           </div>
         )}
+
+        <GoogleSignInButton
+          onSuccess={handleGoogleSuccess}
+          onError={(msg) => setError(msg)}
+          label="Sign in with Google"
+        />
+
+        <div className="relative flex items-center justify-center">
+          <div className="w-full border-t border-gray-200" />
+          <span className="bg-white px-3 text-[10px] font-bold uppercase tracking-wider text-gray-400 whitespace-nowrap">
+            Or use registered email
+          </span>
+          <div className="w-full border-t border-gray-200" />
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

@@ -20,6 +20,8 @@ import { registerHackreadyStudent, exportHackreadyToCSV, setStudentSession } fro
 import { syncToGoogleSheet, SheetsSyncResult } from "@/lib/sheetsSync";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 import { HackreadyRegistration } from "@/types";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { GoogleUserProfile } from "@/lib/googleAuth";
 
 const branchOptions = [
   "Computer Science & Engineering (CSE)",
@@ -57,6 +59,17 @@ export default function HackreadyRegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdRecord, setCreatedRecord] = useState<HackreadyRegistration | null>(null);
   const [syncResult, setSyncResult] = useState<SheetsSyncResult | null>(null);
+  const [googleProfile, setGoogleProfile] = useState<GoogleUserProfile | null>(null);
+
+  const handleGoogleAutofill = (profile: GoogleUserProfile) => {
+    setError("");
+    setGoogleProfile(profile);
+    setFormData((prev) => ({
+      ...prev,
+      fullName: prev.fullName.trim() ? prev.fullName : profile.name,
+      email: profile.email
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +112,9 @@ export default function HackreadyRegisterPage() {
         classYear: record.semester,
         city: "College Campus",
         techInterests: ["Hackready Workshop", "Hackathon Preparation"],
-        registeredProgram: "Hackready Workshop"
+        registeredProgram: "Hackready Workshop",
+        avatarUrl: googleProfile?.picture,
+        authProvider: googleProfile ? "google" : "email"
       });
 
       const sheetSync = await syncToGoogleSheet("Hackready Workshop", {
@@ -294,6 +309,53 @@ export default function HackreadyRegisterPage() {
                 />
               </div>
             </div>
+
+            {/* Quick Autofill with Google */}
+            {googleProfile ? (
+              <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {googleProfile.picture && (
+                    <img
+                      src={googleProfile.picture}
+                      alt={googleProfile.name}
+                      referrerPolicy="no-referrer"
+                      className="w-8 h-8 rounded-full border border-emerald-200 shrink-0"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-emerald-950 truncate">
+                      Signed in with Google as {googleProfile.name}
+                    </p>
+                    <p className="text-[11px] text-emerald-800 truncate">
+                      {googleProfile.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-white text-emerald-700 border border-emerald-200">
+                    Verified Gmail
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGoogleProfile(null)}
+                    className="text-[11px] font-bold text-gray-600 hover:text-black underline"
+                  >
+                    Switch
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-200/80 space-y-2.5">
+                <p className="text-[11px] font-bold text-gray-600 text-center">
+                  Quick-fill your Name &amp; Gmail using Google Sign-In:
+                </p>
+                <GoogleSignInButton
+                  onSuccess={handleGoogleAutofill}
+                  onError={(msg) => setError(msg)}
+                  label="Autofill with Google"
+                />
+              </div>
+            )}
 
             {/* 1. Name & Roll No */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

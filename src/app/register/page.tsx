@@ -19,6 +19,8 @@ import {
 import { registerStudent, setStudentSession } from "@/lib/storage";
 import { syncToGoogleSheet, SheetsSyncResult } from "@/lib/sheetsSync";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { GoogleUserProfile } from "@/lib/googleAuth";
 
 const interestOptions = [
   "Artificial Intelligence & LLMs",
@@ -46,6 +48,17 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [syncResult, setSyncResult] = useState<SheetsSyncResult | null>(null);
+  const [googleProfile, setGoogleProfile] = useState<GoogleUserProfile | null>(null);
+
+  const handleGoogleAutofill = (profile: GoogleUserProfile) => {
+    setError("");
+    setGoogleProfile(profile);
+    setFormData((prev) => ({
+      ...prev,
+      fullName: prev.fullName.trim() ? prev.fullName : profile.name,
+      email: profile.email
+    }));
+  };
 
   const toggleInterest = (interest: string) => {
     setFormData((prev) => {
@@ -104,7 +117,9 @@ export default function RegisterPage() {
         classYear: formData.classYear,
         city: formData.city.trim(),
         techInterests: formData.techInterests,
-        registeredProgram: formData.registeredProgram
+        registeredProgram: formData.registeredProgram,
+        avatarUrl: googleProfile?.picture,
+        authProvider: googleProfile ? "google" : "email"
       });
 
       const sheetSync = await syncToGoogleSheet("Student Registrations", newStudent);
@@ -254,6 +269,53 @@ export default function RegisterPage() {
             {error && (
               <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-2xl">
                 {error}
+              </div>
+            )}
+
+            {/* Quick Autofill with Google */}
+            {googleProfile ? (
+              <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {googleProfile.picture && (
+                    <img
+                      src={googleProfile.picture}
+                      alt={googleProfile.name}
+                      referrerPolicy="no-referrer"
+                      className="w-8 h-8 rounded-full border border-emerald-200 shrink-0"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-emerald-950 truncate">
+                      Signed in with Google as {googleProfile.name}
+                    </p>
+                    <p className="text-[11px] text-emerald-800 truncate">
+                      {googleProfile.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-white text-emerald-700 border border-emerald-200">
+                    Verified
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGoogleProfile(null)}
+                    className="text-[11px] font-bold text-gray-600 hover:text-black underline"
+                  >
+                    Switch
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-200/80 space-y-2.5">
+                <p className="text-[11px] font-bold text-gray-600 text-center">
+                  Save time — autofill your name &amp; verified Gmail using Google:
+                </p>
+                <GoogleSignInButton
+                  onSuccess={handleGoogleAutofill}
+                  onError={(msg) => setError(msg)}
+                  label="Continue with Google"
+                />
               </div>
             )}
 

@@ -69,3 +69,13 @@ Student submissions from `/register`, `/register/hackready`, and `/contact` auto
 1. Open [sheets.new](https://sheets.new) → **Extensions → Apps Script**, paste `google-apps-script/Code.gs`, and save.
 2. Click **Deploy → New deployment → Web app** (`Execute as: Me`, `Who has access: Anyone`) and copy the `/exec` URL.
 3. Add `NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL` with that URL in **Cloudflare Pages → Settings → Environment variables** (and in `.env.local` for local dev), then redeploy.
+
+---
+
+## 🔐 Sign in with Google (Student Portal & Registration Quick-Fill)
+
+`/login`, `/register`, and `/register/hackready` support Google Identity Services (`src/lib/googleAuth.ts`):
+
+1. Open [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials) and create an **OAuth 2.0 Client ID** (**Web application**).
+2. Add **`https://kre8ech.pages.dev`** (and `http://localhost:3000` for local testing) under **Authorized JavaScript origins**.
+3. Set **`NEXT_PUBLIC_GOOGLE_CLIENT_ID`** in **Cloudflare Pages → Settings → Environment variables** (and `.env.local`) and redeploy.
