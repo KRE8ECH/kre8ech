@@ -8,10 +8,11 @@ export interface GoogleUserProfile {
 }
 
 /**
- * Optional built-in fallback Client ID. Leave empty to configure solely via
- * NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env.local or Cloudflare Pages.
+ * Built-in fallback Google OAuth 2.0 Web Client ID for live Student Sign-In.
+ * Can be overridden at build time via NEXT_PUBLIC_GOOGLE_CLIENT_ID.
  */
-export const DEFAULT_GOOGLE_CLIENT_ID = "";
+export const DEFAULT_GOOGLE_CLIENT_ID =
+  "453280905845-a124dhvpis8sehlf44ltlajm77kufrcn.apps.googleusercontent.com";
 
 const GOOGLE_CLIENT_ID = (
   process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
