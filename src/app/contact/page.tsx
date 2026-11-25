@@ -14,6 +14,7 @@ import {
   Phone
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
+import { syncToGoogleSheet, SheetsSyncResult } from "@/lib/sheetsSync";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -23,11 +24,29 @@ export default function ContactPage() {
     schoolName: "",
     message: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [syncResult, setSyncResult] = useState<SheetsSyncResult | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
+    const enquiry = {
+      id: `inq-${Date.now()}`,
+      submittedAt: new Date().toISOString().split("T")[0],
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      type: formData.type,
+      schoolName: formData.schoolName.trim(),
+      message: formData.message.trim(),
+      status: "New"
+    };
+
+    const result = await syncToGoogleSheet("Contact Enquiries", enquiry);
+    setSyncResult(result);
     setSubmitted(true);
+    setIsSubmitting(false);
   };
 
   return (
@@ -64,10 +83,18 @@ export default function ContactPage() {
                 <p className="text-sm text-gray-600 max-w-sm mx-auto">
                   Thank you for reaching out, <strong>{formData.name}</strong>. A KRE8ECH program coordinator will follow up with you within 24 hours.
                 </p>
+                {syncResult && (
+                  <p className="text-xs font-bold text-gray-500">
+                    {syncResult.synced
+                      ? "Logged to our team spreadsheet."
+                      : "For fastest response, please also message us on WhatsApp."}
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => {
                     setSubmitted(false);
+                    setSyncResult(null);
                     setFormData({ name: "", email: "", type: "student", schoolName: "", message: "" });
                   }}
                   className="px-5 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-800 transition-colors"
@@ -168,9 +195,10 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-black text-xs sm:text-sm shadow-xs transition-all"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#F6C900] hover:bg-[#E5BA00] text-[#202124] font-black text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50"
                 >
-                  <span>Submit Enquiry</span>
+                  <span>{isSubmitting ? "Sending Enquiry..." : "Submit Enquiry"}</span>
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </button>
               </form>

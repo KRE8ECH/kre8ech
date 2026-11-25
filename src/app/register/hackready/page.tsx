@@ -17,6 +17,7 @@ import {
   ChevronLeft
 } from "lucide-react";
 import { registerHackreadyStudent, exportHackreadyToCSV, setStudentSession } from "@/lib/storage";
+import { syncToGoogleSheet, SheetsSyncResult } from "@/lib/sheetsSync";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 import { HackreadyRegistration } from "@/types";
 
@@ -55,8 +56,9 @@ export default function HackreadyRegisterPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdRecord, setCreatedRecord] = useState<HackreadyRegistration | null>(null);
+  const [syncResult, setSyncResult] = useState<SheetsSyncResult | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -100,6 +102,11 @@ export default function HackreadyRegisterPage() {
         registeredProgram: "Hackready Workshop"
       });
 
+      const sheetSync = await syncToGoogleSheet("Hackready Workshop", {
+        ...record,
+        program: "Hackready Workshop"
+      });
+      setSyncResult(sheetSync);
       setCreatedRecord(record);
       setIsSubmitting(false);
     } catch (err) {
@@ -166,8 +173,25 @@ export default function HackreadyRegisterPage() {
                 You&apos;re Registered, {createdRecord.fullName}!
               </h2>
               <p className="text-xs text-gray-600 max-w-md mx-auto">
-                Your entry has been recorded in the Hackready Workshop database.
+                {syncResult?.synced
+                  ? "Your entry has been automatically synced to the Hackready Workshop Master Sheet."
+                  : "Your entry has been saved on this device."}
               </p>
+              {syncResult && (
+                <div className="pt-1 flex justify-center">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
+                      syncResult.synced
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : "bg-amber-50 text-amber-900 border-amber-200"
+                    }`}
+                  >
+                    {syncResult.synced
+                      ? "Synced to Hackready Master Sheet"
+                      : "Saved locally (please also confirm via WhatsApp below)"}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Dossier Card */}

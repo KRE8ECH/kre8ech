@@ -223,22 +223,6 @@ export const registerStudent = (student: Omit<StudentRegistration, "id" | "regis
     status: "Confirmed"
   };
   setLocalData(KEYS.REGISTRATIONS, [newRecord, ...current]);
-
-  // Optional: trigger webhook in background if configured
-  const webhookUrl = getWebhookUrl();
-  if (webhookUrl && typeof window !== "undefined") {
-    try {
-      fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newRecord),
-        mode: "no-cors"
-      }).catch((e) => console.log("Webhook ping sent:", e));
-    } catch (e) {
-      // ignore
-    }
-  }
-
   return newRecord;
 };
 
@@ -303,7 +287,26 @@ export const setAdminAuthenticated = (isAuth: boolean): void => {
   }
 };
 
-// Export CSV
+const escapeCsvCell = (value: unknown): string => {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+};
+
+const downloadCsvFile = (filename: string, headers: string[], rows: unknown[][]): void => {
+  const lines = [headers.map(escapeCsvCell).join(","), ...rows.map((row) => row.map(escapeCsvCell).join(","))];
+  // \uFEFF Byte Order Mark ensures Microsoft Excel opens UTF-8 encoded text properly
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", objectUrl);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+};
+
+// Export CSV (compatible with Excel via UTF-8 BOM)
 export const exportRegistrationsToCSV = (registrations: StudentRegistration[]): void => {
   const headers = [
     "ID",
@@ -321,32 +324,24 @@ export const exportRegistrationsToCSV = (registrations: StudentRegistration[]): 
   ];
   const rows = registrations.map((r) => [
     r.id,
-    `"${r.fullName || ""}"`,
-    `"${r.email || ""}"`,
-    `"${r.phoneNumber || ""}"`,
-    `"${r.schoolCollege || ""}"`,
-    `"${r.classYear || ""}"`,
-    `"${r.city || ""}"`,
-    `"${(r.techInterests || []).join(", ")}"`,
-    `"${r.registeredProgram || "N/A"}"`,
+    r.fullName || "",
+    r.email || "",
+    r.phoneNumber || "",
+    r.schoolCollege || "",
+    r.classYear || "",
+    r.city || "",
+    (r.techInterests || []).join(", "),
+    r.registeredProgram || "N/A",
     r.status || "Confirmed",
     r.registeredAt || "",
-    `"${(r.notes || "").replace(/"/g, '""')}"`
+    r.notes || ""
   ]);
 
-  const csvContent =
-    "data:text/csv;charset=utf-8," +
-    [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute(
-    "download",
-    `kre8ech_student_records_${new Date().toISOString().split("T")[0]}.csv`
+  downloadCsvFile(
+    `kre8ech_student_records_${new Date().toISOString().split("T")[0]}.csv`,
+    headers,
+    rows
   );
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 };
 
 // ==========================================
@@ -447,21 +442,6 @@ export const registerHackreadyStudent = (
     // fallback
   }
 
-  // Webhook trigger if configured
-  const webhookUrl = getWebhookUrl();
-  if (webhookUrl && typeof window !== "undefined") {
-    try {
-      fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newRecord, program: "Hackready Workshop" }),
-        mode: "no-cors"
-      }).catch((e) => console.log("Webhook ping sent:", e));
-    } catch (e) {
-      // ignore
-    }
-  }
-
   return newRecord;
 };
 
@@ -480,30 +460,20 @@ export const exportHackreadyToCSV = (registrations: HackreadyRegistration[]): vo
   ];
 
   const rows = registrations.map((r) => [
-    `"${(r.rollNo || "").replace(/"/g, '""')}"`,
-    `"${(r.fullName || "").replace(/"/g, '""')}"`,
-    `"${(r.branch || "").replace(/"/g, '""')}"`,
-    `"${(r.semester || "").replace(/"/g, '""')}"`,
-    `"${(r.email || "").replace(/"/g, '""')}"`,
-    `"${(r.phoneNumber || "").replace(/"/g, '""')}"`,
+    r.rollNo || "",
+    r.fullName || "",
+    r.branch || "",
+    r.semester || "",
+    r.email || "",
+    r.phoneNumber || "",
     r.status || "Confirmed",
     r.registeredAt || "",
-    `"${(r.notes || "").replace(/"/g, '""')}"`
+    r.notes || ""
   ]);
 
-  // \uFEFF Byte Order Mark ensures Microsoft Excel opens UTF-8 encoded text properly
-  const csvContent =
-    "data:text/csv;charset=utf-8,\uFEFF" +
-    [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute(
-    "download",
-    `kre8ech_hackready_workshop_students_${new Date().toISOString().split("T")[0]}.csv`
+  downloadCsvFile(
+    `kre8ech_hackready_workshop_students_${new Date().toISOString().split("T")[0]}.csv`,
+    headers,
+    rows
   );
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 };

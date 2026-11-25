@@ -59,3 +59,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 npm run build
 npm run start
 ```
+
+---
+
+## 📊 Google Sheets & Excel Auto-Sync
+
+Student submissions from `/register`, `/register/hackready`, and `/contact` automatically append rows to Google Sheets (which can be opened directly in Excel or downloaded via **File → Download → Microsoft Excel (.xlsx)**):
+
+1. Open [sheets.new](https://sheets.new) → **Extensions → Apps Script**, paste `google-apps-script/Code.gs`, and save.
+2. Click **Deploy → New deployment → Web app** (`Execute as: Me`, `Who has access: Anyone`) and copy the `/exec` URL.
+3. Add `NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL` with that URL in **Cloudflare Pages → Settings → Environment variables** (and in `.env.local` for local dev), then redeploy.

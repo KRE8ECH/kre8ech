@@ -76,6 +76,11 @@ import {
   saveAnnouncements
 } from "@/lib/storage";
 import {
+  getActiveSheetsEndpoint,
+  isGlobalSheetsSyncConfigured,
+  syncToGoogleSheet
+} from "@/lib/sheetsSync";
+import {
   ProgramOverview,
   Project,
   Achievement,
@@ -413,20 +418,23 @@ export default function AdminPage() {
     });
   };
 
+  const globalSheetsConfigured = isGlobalSheetsSyncConfigured();
+
   const handleSaveWebhook = () => {
     saveWebhookUrl(webhookUrlInput.trim());
-    showFeedback("Google Sheets / Webhook URL saved successfully!");
+    showFeedback("Browser-local Google Sheets URL saved for testing!");
   };
 
   const handleTestWebhook = async () => {
-    if (!webhookUrlInput.trim()) {
-      alert("Please enter a valid Webhook URL first.");
+    const targetUrl = webhookUrlInput.trim() || getActiveSheetsEndpoint().url;
+    if (!targetUrl) {
+      alert("Please enter a valid Webhook URL first (or set NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL).");
       return;
     }
     setIsTestingWebhook(true);
     try {
       const sample = {
-        id: "test-ping",
+        id: `test-ping-${Date.now()}`,
         fullName: "Test Lead (KRE8ECH Verification)",
         email: "kre8ech@gmail.com",
         phoneNumber: "+91 98757 21958",
@@ -440,14 +448,12 @@ export default function AdminPage() {
         notes: "Test webhook verification ping sent from Admin Dashboard"
       };
 
-      await fetch(webhookUrlInput.trim(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sample),
-        mode: "no-cors"
-      });
-
-      showFeedback("Test payload dispatched to webhook!");
+      const res = await syncToGoogleSheet("Student Registrations", sample, targetUrl);
+      if (res.synced) {
+        showFeedback("Test payload dispatched to Google Sheets!");
+      } else {
+        alert("Error sending test payload: " + (res.error || "Unknown error"));
+      }
     } catch (e) {
       alert("Error sending test payload: " + (e as Error).message);
     } finally {
@@ -787,14 +793,29 @@ export default function AdminPage() {
           {/* Sync & Integration Banner */}
           <div className="bg-[#FFF9E8] border border-[#F6C900]/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Sparkles className="w-4 h-4 text-[#F6C900]" />
                 <span className="text-xs font-black text-[#202124] uppercase tracking-wide">
-                  Live Sync & WhatsApp Notification
+                  Google Sheets / Excel Auto-Sync
+                </span>
+                <span
+                  className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                    globalSheetsConfigured
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      : "bg-white text-amber-900 border-amber-300"
+                  }`}
+                >
+                  {globalSheetsConfigured
+                    ? "Global Production Sync Active"
+                    : webhookUrlInput
+                    ? "Browser-Local Test URL Only"
+                    : "Not Connected Globally"}
                 </span>
               </div>
               <p className="text-xs text-gray-700">
-                Applicants automatically prompt a WhatsApp message to <strong>+91 98757 21958</strong> upon registration. You can also connect a Google Sheets Webhook to stream leads live.
+                {globalSheetsConfigured
+                  ? "Every student submitting /register, /register/hackready, or /contact is automatically added to your Google Sheet (downloadable as .xlsx)."
+                  : "Set NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL in Cloudflare Pages after deploying google-apps-script/Code.gs so all students sync automatically."}
               </p>
             </div>
 
@@ -805,7 +826,11 @@ export default function AdminPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-[#202124] hover:bg-gray-50 transition-colors shadow-2xs"
               >
                 <LinkIcon className="w-3.5 h-3.5" />
-                <span>{webhookUrlInput ? "Webhook Connected" : "Connect Google Sheets"}</span>
+                <span>
+                  {globalSheetsConfigured || webhookUrlInput
+                    ? "Manage Sheets Sync"
+                    : "Connect Google Sheets"}
+                </span>
               </button>
             </div>
           </div>
@@ -816,10 +841,10 @@ export default function AdminPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-black uppercase text-[#202124]">
-                    Google Sheets / Zapier / Make Webhook Endpoint
+                    Google Apps Script Web App Endpoint (Sheets &amp; Excel Sync)
                   </h4>
                   <p className="text-[11px] text-gray-500">
-                    Paste your Google Apps Script Web App URL or Formspree/Make webhook here. Every applicant will automatically be sent to this endpoint in real time.
+                    Deploy <code>google-apps-script/Code.gs</code> as a Google Sheets Web App (&quot;Anyone&quot; access). Set <code>NEXT_PUBLIC_GOOGLE_SHEETS_WEBHOOK_URL</code> in Cloudflare Pages for all visitors, or paste the <code>/exec</code> URL below to test from this browser.
                   </p>
                 </div>
                 <button onClick={() => setIsWebhookOpen(false)} className="text-gray-400 hover:text-gray-700">

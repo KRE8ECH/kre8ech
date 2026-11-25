@@ -17,6 +17,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { registerStudent, setStudentSession } from "@/lib/storage";
+import { syncToGoogleSheet, SheetsSyncResult } from "@/lib/sheetsSync";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 
 const interestOptions = [
@@ -44,6 +45,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [syncResult, setSyncResult] = useState<SheetsSyncResult | null>(null);
 
   const toggleInterest = (interest: string) => {
     setFormData((prev) => {
@@ -57,7 +59,7 @@ export default function RegisterPage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -95,6 +97,9 @@ export default function RegisterPage() {
         registeredProgram: formData.registeredProgram
       });
 
+      const sheetSync = await syncToGoogleSheet("Student Registrations", newStudent);
+      setSyncResult(sheetSync);
+      setIsSubmitting(false);
       setIsSuccess(true);
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -145,8 +150,26 @@ export default function RegisterPage() {
                 Registration Confirmed!
               </h2>
               <p className="text-sm text-gray-600 max-w-md mx-auto">
-                Welcome, <strong>{formData.fullName}</strong>. Your application has been logged into our records database.
+                Welcome, <strong>{formData.fullName}</strong>.{" "}
+                {syncResult?.synced
+                  ? "Your application has been automatically synced to our official spreadsheet."
+                  : "Your application has been saved on this device."}
               </p>
+              {syncResult && (
+                <div className="pt-1 flex justify-center">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
+                      syncResult.synced
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : "bg-amber-50 text-amber-900 border-amber-200"
+                    }`}
+                  >
+                    {syncResult.synced
+                      ? "Synced to Master Sheet"
+                      : "Saved locally (please also confirm via WhatsApp below)"}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Registration Summary Card */}
