@@ -1,8 +1,8 @@
 /**
- * Built-in fallback Google Analytics 4 Measurement ID (e.g. "G-XXXXXXXXXX").
- * Can be set or overridden via NEXT_PUBLIC_GA_MEASUREMENT_ID in .env.local or Cloudflare Pages.
+ * Built-in Google Analytics 4 Measurement ID for live traffic & conversion tracking.
+ * Can be overridden at build time via NEXT_PUBLIC_GA_MEASUREMENT_ID.
  */
-export const DEFAULT_GA_MEASUREMENT_ID = "";
+export const DEFAULT_GA_MEASUREMENT_ID = "G-N53SKC691X";
 
 const RAW_GA_ID = (
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||

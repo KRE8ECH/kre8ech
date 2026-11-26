@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FloatingWhatsAppButton from "@/components/FloatingWhatsAppButton";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
+import { getGaMeasurementId } from "@/lib/analytics";
 
 export const viewport = {
   width: "device-width",
@@ -36,8 +37,28 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const gaMeasurementId = getGaMeasurementId();
+
   return (
     <html lang="en">
+      {gaMeasurementId && (
+        <head>
+          <script
+            async
+            src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+          />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
+                window.gtag('js', new Date());
+                window.gtag('config', '${gaMeasurementId}', { send_page_view: false });
+              `,
+            }}
+          />
+        </head>
+      )}
       <body className="min-h-screen flex flex-col bg-white text-[#202124] font-sans antialiased selection:bg-[#F6C900] selection:text-[#202124]">
         <Suspense fallback={null}>
           <GoogleAnalytics />
