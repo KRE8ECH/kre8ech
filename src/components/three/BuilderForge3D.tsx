@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import * as THREE from "three";
 import { ArrowRight, Boxes, Cpu, Rocket, Sparkles, Trophy, Zap } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 type ForgeMode = "neural" | "matrix" | "hackathon" | "warp";
 
@@ -68,6 +69,7 @@ export default function BuilderForge3D({ compact = false }: BuilderForge3DProps)
     setActiveMode(mode);
     activeModeRef.current = mode;
     pulseBoostRef.current = 1.0;
+    trackEvent("forge_3d_mode", { mode });
   };
 
   const triggerPulseBoost = () => {

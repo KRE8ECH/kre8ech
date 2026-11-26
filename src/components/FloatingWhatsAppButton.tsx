@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { trackEvent } from "@/lib/analytics";
 
 export function WhatsAppIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
@@ -26,6 +27,7 @@ export default function FloatingWhatsAppButton() {
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackEvent("whatsapp_click", { location: "floating_button" })}
         className="group flex items-center justify-center w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white shadow-[0_6px_20px_rgba(37,211,102,0.45)] hover:shadow-[0_8px_28px_rgba(37,211,102,0.65)] hover:scale-110 active:scale-95 transition-all duration-200 select-none"
         title="Chat on WhatsApp (+91 98757 21958)"
       >

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 import { syncToGoogleSheet, SheetsSyncResult } from "@/lib/sheetsSync";
+import { trackEvent } from "@/lib/analytics";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -44,6 +45,10 @@ export default function ContactPage() {
     };
 
     const result = await syncToGoogleSheet("Contact Enquiries", enquiry);
+    trackEvent("contact_enquiry", {
+      enquiry_type: formData.type,
+      sheet_synced: result.synced
+    });
     setSyncResult(result);
     setSubmitted(true);
     setIsSubmitting(false);

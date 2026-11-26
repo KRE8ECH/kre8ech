@@ -11,6 +11,7 @@ import {
 } from "@/lib/storage";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { GoogleUserProfile } from "@/lib/googleAuth";
+import { trackEvent } from "@/lib/analytics";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -72,6 +73,7 @@ export default function LoginPage() {
       });
     }
 
+    trackEvent("login", { method: provider });
     router.push("/dashboard");
   };
 
@@ -101,6 +103,7 @@ export default function LoginPage() {
       registeredProgram: "Four-Week Builder Program Cohort 1",
       authProvider: "demo"
     });
+    trackEvent("login", { method: "demo" });
     router.push("/dashboard");
   };
 

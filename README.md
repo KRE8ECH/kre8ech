@@ -79,3 +79,13 @@ Student submissions from `/register`, `/register/hackready`, and `/contact` auto
 1. Open [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials) and create an **OAuth 2.0 Client ID** (**Web application**).
 2. Add **`https://kre8ech.pages.dev`** (and `http://localhost:3000` for local testing) under **Authorized JavaScript origins**.
 3. Set **`NEXT_PUBLIC_GOOGLE_CLIENT_ID`** in **Cloudflare Pages → Settings → Environment variables** (and `.env.local`) and redeploy.
+
+---
+
+## 📈 Google Analytics 4 (GA4)
+
+Page views and key conversion events (`generate_lead`, `contact_enquiry`, `login`, `whatsapp_click`, `forge_3d_mode`) are tracked via `src/lib/analytics.ts` and `src/components/analytics/GoogleAnalytics.tsx`:
+
+1. Create a Google Analytics 4 property & **Web data stream** for `https://kre8ech.pages.dev` at [analytics.google.com](https://analytics.google.com).
+2. Copy your **Measurement ID** (`G-XXXXXXXXXX`).
+3. Set **`NEXT_PUBLIC_GA_MEASUREMENT_ID`** in **Cloudflare Pages → Settings → Environment variables** (or update `DEFAULT_GA_MEASUREMENT_ID` in `src/lib/analytics.ts`) and redeploy.

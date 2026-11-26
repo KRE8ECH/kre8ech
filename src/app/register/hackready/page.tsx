@@ -22,6 +22,7 @@ import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 import { HackreadyRegistration } from "@/types";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { GoogleUserProfile } from "@/lib/googleAuth";
+import { trackEvent } from "@/lib/analytics";
 
 const branchOptions = [
   "Computer Science & Engineering (CSE)",
@@ -120,6 +121,13 @@ export default function HackreadyRegisterPage() {
       const sheetSync = await syncToGoogleSheet("Hackready Workshop", {
         ...record,
         program: "Hackready Workshop"
+      });
+      trackEvent("generate_lead", {
+        form_name: "hackready_workshop_registration",
+        branch: formData.branch.trim(),
+        semester: formData.semester.trim(),
+        auth_method: googleProfile ? "google" : "email",
+        sheet_synced: sheetSync.synced
       });
       setSyncResult(sheetSync);
       setCreatedRecord(record);

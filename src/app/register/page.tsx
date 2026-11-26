@@ -21,6 +21,7 @@ import { syncToGoogleSheet, SheetsSyncResult } from "@/lib/sheetsSync";
 import { WhatsAppIcon } from "@/components/FloatingWhatsAppButton";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { GoogleUserProfile } from "@/lib/googleAuth";
+import { trackEvent } from "@/lib/analytics";
 
 const interestOptions = [
   "Artificial Intelligence & LLMs",
@@ -123,6 +124,12 @@ export default function RegisterPage() {
       });
 
       const sheetSync = await syncToGoogleSheet("Student Registrations", newStudent);
+      trackEvent("generate_lead", {
+        form_name: "builder_program_registration",
+        program: formData.registeredProgram,
+        auth_method: googleProfile ? "google" : "email",
+        sheet_synced: sheetSync.synced
+      });
       setSyncResult(sheetSync);
       setIsSubmitting(false);
       setIsSuccess(true);

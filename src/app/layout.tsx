@@ -1,8 +1,10 @@
+import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FloatingWhatsAppButton from "@/components/FloatingWhatsAppButton";
+import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 
 export const viewport = {
   width: "device-width",
@@ -37,6 +39,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col bg-white text-[#202124] font-sans antialiased selection:bg-[#F6C900] selection:text-[#202124]">
+        <Suspense fallback={null}>
+          <GoogleAnalytics />
+        </Suspense>
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
